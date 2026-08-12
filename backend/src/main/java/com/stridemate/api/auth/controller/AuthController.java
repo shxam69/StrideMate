@@ -1,0 +1,70 @@
+package com.stridemate.api.auth.controller;
+
+import com.stridemate.api.auth.dto.AuthResponse;
+import com.stridemate.api.auth.dto.LoginRequest;
+import com.stridemate.api.auth.dto.OtpRequest;
+import com.stridemate.api.auth.dto.OtpVerifyRequest;
+import com.stridemate.api.auth.dto.RegisterRequest;
+import com.stridemate.api.auth.service.AuthService;
+import com.stridemate.api.auth.service.OtpService;
+import com.stridemate.api.user.dto.UserDto;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/auth")
+public class AuthController {
+
+    private final AuthService authService;
+    private final OtpService otpService;
+
+    @Autowired
+    public AuthController(AuthService authService, OtpService otpService) {
+        this.authService = authService;
+        this.otpService = otpService;
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
+        AuthResponse response = authService.register(request);
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+        AuthResponse response = authService.login(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserDto> getCurrentUser(Authentication authentication) {
+        String email = authentication.getName();
+        return ResponseEntity.ok(authService.getCurrentUser(email));
+    }
+
+    @PostMapping("/request-otp")
+    public ResponseEntity<?> requestOtp(@Valid @RequestBody OtpRequest request) {
+        otpService.generateAndSendOtp(request.getPhoneNumber());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/verify-otp")
+    public ResponseEntity<?> verifyOtp(@Valid @RequestBody OtpVerifyRequest request) {
+        boolean isValid = otpService.verifyOtp(request.getPhoneNumber(), request.getOtp());
+        if (isValid) {
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.badRequest().body("Invalid, expired, or already used OTP");
+        }
+    }
+
+    @PostMapping("/resend-otp")
+    public ResponseEntity<?> resendOtp(@Valid @RequestBody OtpRequest request) {
+        otpService.generateAndSendOtp(request.getPhoneNumber());
+        return ResponseEntity.ok().build();
+    }
+}
