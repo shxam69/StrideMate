@@ -26,74 +26,93 @@ const Register: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative z-10">
             <div className="sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="flex justify-center">
-                    <Activity className="w-12 h-12 text-indigo-600" />
+                    <div className="bg-[var(--accent)]/10 p-3 rounded-2xl border border-[var(--accent)]/30 shadow-[0_0_15px_var(--glow-purple)]">
+                        <Activity className="w-10 h-10 text-[var(--accent)]" />
+                    </div>
                 </div>
-                <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900">Create an account</h2>
+                <h2 className="mt-6 text-center text-3xl font-extrabold text-[var(--text)] tracking-tight">Create an account</h2>
             </div>
 
-            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+            <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
+                <div className="glass-card py-8 px-5 sm:px-10">
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         {error && (
-                            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+                            <div className="bg-[var(--danger)]/10 border border-[var(--danger)]/30 text-[var(--danger)] px-4 py-3 rounded-xl text-sm font-medium">
                                 {error}
                             </div>
                         )}
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700">First Name</label>
-                                <div className="mt-1">
-                                    <input type="text" required value={firstName} onChange={e => setFirstName(e.target.value)} 
-                                        className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                                </div>
+                                <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">First Name</label>
+                                <input 
+                                    type="text" 
+                                    required 
+                                    value={firstName} 
+                                    onChange={e => setFirstName(e.target.value)} 
+                                    className="glass-input h-12" 
+                                />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700">Last Name</label>
-                                <div className="mt-1">
-                                    <input type="text" required value={lastName} onChange={e => setLastName(e.target.value)} 
-                                        className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                                </div>
+                                <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">Last Name</label>
+                                <input 
+                                    type="text" 
+                                    required 
+                                    value={lastName} 
+                                    onChange={e => setLastName(e.target.value)} 
+                                    className="glass-input h-12" 
+                                />
                             </div>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700">Email address</label>
-                            <div className="mt-1">
-                                <input type="email" required value={email} onChange={e => setEmail(e.target.value)} 
-                                    className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                            </div>
+                            <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">Email address</label>
+                            <input 
+                                type="email" 
+                                required 
+                                value={email} 
+                                onChange={e => setEmail(e.target.value)} 
+                                className="glass-input h-12" 
+                                placeholder="you@example.com"
+                            />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700">Phone Number (with country code)</label>
-                            <div className="mt-1">
-                                <input type="tel" required value={phoneNumber} onChange={e => setPhoneNumber(e.target.value)} 
-                                    placeholder="+919876543210"
-                                    className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                            </div>
+                            <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">Phone (with code)</label>
+                            <input 
+                                type="tel" 
+                                required 
+                                value={phoneNumber} 
+                                onChange={e => setPhoneNumber(e.target.value)} 
+                                placeholder="+1234567890"
+                                className="glass-input h-12" 
+                            />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700">Password</label>
-                            <div className="mt-1">
-                                <input type="password" required value={password} onChange={e => setPassword(e.target.value)} 
-                                    className="appearance-none block w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" />
-                            </div>
+                            <label className="block text-sm font-medium text-[var(--text-muted)] mb-2">Password</label>
+                            <input 
+                                type="password" 
+                                required 
+                                value={password} 
+                                onChange={e => setPassword(e.target.value)} 
+                                className="glass-input h-12" 
+                                placeholder="••••••••"
+                            />
                         </div>
 
-                        <div>
-                            <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <div className="pt-2">
+                            <button type="submit" className="glass-button h-12">
                                 Sign up
                             </button>
                         </div>
                     </form>
 
-                    <div className="mt-6 text-center text-sm">
-                        <span className="text-slate-500">Already have an account? </span>
-                        <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">Sign in</Link>
+                    <div className="mt-8 text-center text-sm border-t border-[var(--border)] pt-6">
+                        <span className="text-[var(--text-muted)]">Already have an account? </span>
+                        <Link to="/login" className="font-medium text-[var(--accent)] hover:text-[var(--accent-hover)] transition-colors">Sign in</Link>
                     </div>
                 </div>
             </div>

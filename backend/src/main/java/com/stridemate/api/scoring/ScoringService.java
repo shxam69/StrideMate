@@ -18,8 +18,8 @@ public class ScoringService {
             case RUNNING -> calculateDistancePoints(activity.getDistanceKm(), 100);
             case WALKING -> calculateDistancePoints(activity.getDistanceKm(), 50);
             case CYCLING -> calculateDistancePoints(activity.getDistanceKm(), 25);
-            case SWIMMING -> calculateDurationPoints(activity.getDurationMinutes(), 15);
-            case GYM -> calculateDurationPoints(activity.getDurationMinutes(), 5);
+            case SWIMMING -> calculateDurationPoints(activity.getDurationMinutes(), activity.getDurationSeconds(), 15);
+            case GYM -> calculateDurationPoints(activity.getDurationMinutes(), activity.getDurationSeconds(), 5);
             case DAILY_STEPS -> calculateStepsPoints(activity.getSteps(), 1, 100);
         };
     }
@@ -28,25 +28,31 @@ public class ScoringService {
         if (distanceKm == null || distanceKm.compareTo(BigDecimal.ZERO) <= 0) {
             return 0;
         }
-        // Multiply distance by rate and floor the result
+        // Formula: floor(distance × conversionRate)
         return distanceKm.multiply(BigDecimal.valueOf(ratePerKm))
                 .setScale(0, RoundingMode.FLOOR)
                 .intValue();
     }
 
-    private int calculateDurationPoints(Integer durationMinutes, int ratePerMinute) {
-        if (durationMinutes == null || durationMinutes <= 0) {
+    private int calculateDurationPoints(Integer durationMinutes, Integer durationSeconds, int ratePerMinute) {
+        int m = durationMinutes == null ? 0 : durationMinutes;
+        int s = durationSeconds == null ? 0 : durationSeconds;
+        int totalSeconds = (m * 60) + s;
+        
+        if (totalSeconds <= 0) {
             return 0;
         }
-        // Only complete minutes count
-        return durationMinutes * ratePerMinute;
+        // Formula: floor(totalSeconds / 60) × rate
+        int completedMinutes = totalSeconds / 60; // integer division inherently floors
+        return completedMinutes * ratePerMinute;
     }
 
     private int calculateStepsPoints(Integer steps, int rate, int block) {
         if (steps == null || steps <= 0) {
             return 0;
         }
-        // Only complete blocks count
-        return (steps / block) * rate;
+        // Formula: floor(steps / 100) × rate
+        int completedBlocks = steps / block; // integer division inherently floors
+        return completedBlocks * rate;
     }
 }

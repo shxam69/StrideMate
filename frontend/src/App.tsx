@@ -14,20 +14,30 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <>{children}</>;
 };
 
+import AddActivity from './pages/AddActivity';
+import { ThemeProvider } from './context/ThemeContext';
+
 const App: React.FC = () => {
     return (
-        <AuthProvider>
-            <Router>
-                <Routes>
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                    <Route path="/verify-phone" element={<OtpVerification />} />
-                    <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                    <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
-                    <Route path="/" element={<Navigate to="/dashboard" />} />
-                </Routes>
-            </Router>
-        </AuthProvider>
+        <ThemeProvider>
+            <AuthProvider>
+                <div className="ambient-bg">
+                    <div className="ambient-glow-purple"></div>
+                    <div className="ambient-glow-blue"></div>
+                </div>
+                <Router>
+                    <Routes>
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<Register />} />
+                        <Route path="/verify-phone" element={<OtpVerification />} />
+                        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                        <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+                        <Route path="/add-activity" element={<ProtectedRoute><AddActivity /></ProtectedRoute>} />
+                        <Route path="/" element={<Navigate to="/dashboard" />} />
+                    </Routes>
+                </Router>
+            </AuthProvider>
+        </ThemeProvider>
     );
 };
 

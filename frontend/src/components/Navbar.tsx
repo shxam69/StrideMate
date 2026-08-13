@@ -1,46 +1,157 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
-import { Activity, LogOut, LayoutDashboard, Trophy } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Activity, LogOut, LayoutDashboard, Trophy, Plus, Menu, X, Sun, Moon } from 'lucide-react';
 
 const Navbar: React.FC = () => {
     const { user, logout } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     const navigate = useNavigate();
+    const location = useLocation();
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     const handleLogout = () => {
         logout();
         navigate('/login');
     };
 
+    const navLinks = [
+        { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { path: '/leaderboard', label: 'Leaderboard', icon: Trophy },
+        { path: '/add-activity', label: 'Add Activity', icon: Plus },
+    ];
+
+    const ThemeToggleBtn = ({ isMobile = false }) => (
+        <button
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+            className={`p-2 rounded-xl transition-all duration-200 border flex items-center justify-center
+                ${isMobile 
+                    ? 'w-full bg-[var(--surface-elevated)] border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text)]'
+                    : 'bg-[var(--glass-bg)] border-[var(--glass-border)] text-[var(--text-muted)] hover:bg-[var(--glass-bg-hover)] hover:text-[var(--accent)] hover:border-[var(--glass-border-hover)]'
+                }`}
+        >
+            {theme === 'dark' ? (
+                <Sun className="h-5 w-5" />
+            ) : (
+                <Moon className="h-5 w-5" />
+            )}
+            {isMobile && <span className="ml-3 font-medium">Toggle Theme</span>}
+        </button>
+    );
+
     return (
-        <nav className="bg-indigo-600 text-white shadow-lg">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-16">
+        <header className="sticky top-0 z-40 w-full">
+            {/* Backdrop overlay */}
+            {user && mobileMenuOpen && (
+                <div 
+                    className="lg:hidden fixed inset-0 z-10 bg-[var(--bg)]/80 backdrop-blur-sm transition-opacity"
+                    onClick={() => setMobileMenuOpen(false)}
+                    aria-hidden="true"
+                />
+            )}
+
+            <nav className="relative z-20 w-full glass-panel border-b border-[var(--glass-border)]">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex items-center justify-between h-20">
                     <div className="flex items-center space-x-3">
-                        <Activity className="h-8 w-8 text-white" />
-                        <span className="font-bold text-xl tracking-tight">StrideMate</span>
+                        <div className="bg-[var(--accent)]/10 p-2 rounded-xl border border-[var(--accent)]/20 shadow-[0_0_15px_var(--glow-purple)]">
+                            <Activity className="h-6 w-6 text-[var(--accent)]" />
+                        </div>
+                        <span className="font-bold text-xl tracking-tight text-[var(--text)]">StrideMate</span>
                     </div>
+
+                    {/* Desktop Menu */}
                     {user && (
-                        <div className="flex items-center space-x-6">
-                            <Link to="/dashboard" className="flex items-center space-x-1 hover:text-indigo-200 transition">
-                                <LayoutDashboard className="h-5 w-5" />
-                                <span>Dashboard</span>
-                            </Link>
-                            <Link to="/leaderboard" className="flex items-center space-x-1 hover:text-indigo-200 transition">
-                                <Trophy className="h-5 w-5" />
-                                <span>Leaderboard</span>
-                            </Link>
-                            <div className="border-l border-indigo-400 h-6 mx-2"></div>
-                            <span className="font-medium">{user.firstName} {user.lastName}</span>
-                            <button onClick={handleLogout} className="flex items-center space-x-1 hover:text-red-300 transition">
-                                <LogOut className="h-5 w-5" />
-                                <span>Logout</span>
+                        <div className="hidden lg:flex items-center space-x-8">
+                            <div className="flex items-center space-x-6">
+                                {navLinks.map(link => {
+                                    const isActive = location.pathname === link.path;
+                                    const Icon = link.icon;
+                                    return (
+                                        <Link 
+                                            key={link.path} 
+                                            to={link.path} 
+                                            className={`flex items-center space-x-2 text-sm font-medium transition-all duration-200 ${isActive ? 'text-[var(--accent)]' : 'text-[var(--text-muted)] hover:text-[var(--text)]'}`}
+                                        >
+                                            <Icon className={`h-4 w-4 ${isActive ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'}`} />
+                                            <span>{link.label}</span>
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                            
+                            <div className="h-8 w-px bg-[var(--border)]"></div>
+                            
+                            <div className="flex items-center space-x-4">
+                                <ThemeToggleBtn />
+                                <span className="font-medium text-sm text-[var(--text)]">{user.firstName} {user.lastName}</span>
+                                <button 
+                                    onClick={handleLogout} 
+                                    className="p-2 rounded-xl bg-[var(--glass-bg)] border border-[var(--glass-border)] hover:bg-[var(--danger)]/10 hover:border-[var(--danger)]/30 hover:text-[var(--danger)] text-[var(--text-muted)] transition-all duration-200 group"
+                                    title="Logout"
+                                    aria-label="Logout"
+                                >
+                                    <LogOut className="h-5 w-5 group-hover:text-[var(--danger)] transition-colors" />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Mobile Menu Button */}
+                    {user && (
+                        <div className="lg:hidden flex items-center space-x-3">
+                            <ThemeToggleBtn />
+                            <button 
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                aria-label="Toggle mobile menu"
+                                className="p-2 rounded-xl bg-[var(--glass-bg)] border border-[var(--glass-border)] text-[var(--text-muted)] hover:text-[var(--text)]"
+                            >
+                                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                             </button>
                         </div>
                     )}
                 </div>
             </div>
-        </nav>
+            </nav>
+
+            {/* Mobile Menu Dropdown */}
+            {user && mobileMenuOpen && (
+                <div className="lg:hidden absolute top-full left-0 right-0 z-20 bg-[var(--bg)] border-b border-[var(--border)] shadow-2xl">
+                    <div className="bg-[var(--surface-elevated)] w-full">
+                        <div className="px-4 py-4 space-y-2">
+                        {navLinks.map(link => {
+                            const isActive = location.pathname === link.path;
+                            const Icon = link.icon;
+                            return (
+                                <Link 
+                                    key={link.path}
+                                    to={link.path}
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className={`flex items-center space-x-3 px-4 py-3.5 rounded-xl transition-colors ${isActive ? 'bg-[var(--accent)]/15 text-[var(--accent)]' : 'text-[var(--text-muted)] hover:bg-[var(--surface)] hover:text-[var(--text)]'}`}
+                                >
+                                    <Icon className="h-5 w-5" />
+                                    <span className="font-medium text-base">{link.label}</span>
+                                </Link>
+                            );
+                        })}
+                        <div className="border-t border-[var(--border)] my-4 pt-4">
+                            <div className="px-4 pb-3 text-sm text-[var(--text-muted)] font-medium">Signed in as {user.firstName} {user.lastName}</div>
+                            
+                            <button 
+                                onClick={handleLogout}
+                                className="flex items-center space-x-3 px-4 py-3.5 rounded-xl text-[var(--danger)] hover:bg-[var(--danger)]/10 w-full text-left transition-colors"
+                            >
+                                <LogOut className="h-5 w-5" />
+                                <span className="font-medium text-base">Logout</span>
+                            </button>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            )}
+        </header>
     );
 };
 

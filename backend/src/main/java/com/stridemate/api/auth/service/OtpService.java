@@ -29,6 +29,13 @@ public class OtpService {
     }
 
     public void generateAndSendOtp(String phoneNumber) {
+        Optional<OtpEntity> recentOtpOpt = otpRepository.findTopByPhoneNumberOrderByCreatedAtDesc(phoneNumber);
+        if (recentOtpOpt.isPresent()) {
+            if (Instant.now().isBefore(recentOtpOpt.get().getCreatedAt().plus(60, ChronoUnit.SECONDS))) {
+                throw new com.stridemate.api.exception.RateLimitException("Please wait 60 seconds before requesting a new OTP");
+            }
+        }
+
         // Generate a 4-digit OTP
         int otpValue = 1000 + secureRandom.nextInt(9000); // 1000 to 9999
         String otpStr = String.valueOf(otpValue);

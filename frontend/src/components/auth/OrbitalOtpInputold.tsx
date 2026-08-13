@@ -59,11 +59,10 @@ const OrbitalOtpInput: React.FC<OrbitalOtpInputProps> = ({ value, onChange, onCo
             const dx = slotCenterX - hubCenterX;
             const dy = slotCenterY - hubCenterY;
             
-            // The slot and the hub are both centered in the same 200x200 container,
-            // so the slot's own untransformed center already sits exactly on the hub.
-            // Pivoting there (not dx/dy away from it) is what makes rotate() trace a
-            // perfect circle around the hub instead of swinging around empty space.
-            slot.style.transformOrigin = '50% 50%';
+            const slotWidth = 52;
+            const slotHeight = 52;
+            
+            slot.style.transformOrigin = `${dx + slotWidth / 2}px ${dy + slotHeight / 2}px`;
             
             return slot.animate(
                 [
@@ -164,7 +163,7 @@ const OrbitalOtpInput: React.FC<OrbitalOtpInputProps> = ({ value, onChange, onCo
                         cy="100" 
                         r="66"
                         fill="none" 
-                        stroke={phase === 'verified' ? 'var(--success)' : 'var(--border)'} 
+                        stroke={phase === 'verified' ? '#2ee6a8' : '#333842'} 
                         strokeWidth="1.5" 
                         strokeDasharray="3 6"
                         style={{ transition: 'stroke 0.4s ease' }}
@@ -174,8 +173,8 @@ const OrbitalOtpInput: React.FC<OrbitalOtpInputProps> = ({ value, onChange, onCo
                 {/* Central Hub */}
                 <span 
                     ref={hubRef}
-                    className="absolute top-1/2 left-1/2 w-1.5 h-1.5 rounded-full transform -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-opacity duration-300"
-                    style={{ opacity: phase === 'verified' ? 0 : 1, backgroundColor: 'var(--text-muted)' }}
+                    className="absolute top-1/2 left-1/2 w-1.5 h-1.5 bg-[#555] rounded-full transform -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-opacity duration-300"
+                    style={{ opacity: phase === 'verified' ? 0 : 1 }}
                 ></span>
 
                 {/* Checkmark icon for verified state */}
@@ -188,8 +187,8 @@ const OrbitalOtpInput: React.FC<OrbitalOtpInputProps> = ({ value, onChange, onCo
                         zIndex: 20
                     }}
                 >
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-[0_0_20px_var(--success)]" style={{ backgroundColor: 'var(--success)' }}>
-                        <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                    <div className="w-12 h-12 bg-[#2ee6a8] rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(46,230,168,0.4)]">
+                        <svg className="w-6 h-6 text-[#121214]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                         </svg>
                     </div>
@@ -200,14 +199,14 @@ const OrbitalOtpInput: React.FC<OrbitalOtpInputProps> = ({ value, onChange, onCo
                     const digit = value[index] || '';
                     const isActive = value.length === index && (phase === 'entering' || phase === 'error');
                     
-                    let borderColor = 'border-[var(--border)]';
+                    let borderColor = 'border-[#2a2d36]';
                     let shadow = '';
                     
                     if (phase === 'error') {
-                        borderColor = 'border-[var(--danger)]';
+                        borderColor = 'border-[#ff4d6a]';
                     } else if (isActive) {
-                        borderColor = 'border-[var(--accent)]';
-                        shadow = 'shadow-[0_0_12px_var(--glow-blue)]';
+                        borderColor = 'border-[#dceaff]';
+                        shadow = 'shadow-[0_0_12px_rgba(220,234,255,0.2)]';
                     }
 
                     return (
@@ -216,7 +215,7 @@ const OrbitalOtpInput: React.FC<OrbitalOtpInputProps> = ({ value, onChange, onCo
                             ref={el => { slotRefs.current[index] = el; }}
                             data-state={dataState}
                             data-index={index}
-                            className={`slot ${phase === 'verified' ? 'success' : ''} absolute top-1/2 left-1/2 -mt-[26px] -ml-[26px] pointer-events-none flex items-center justify-center w-[52px] h-[52px] bg-[var(--surface-elevated)] rounded-xl text-[var(--text)] text-xl font-semibold border ${borderColor} ${shadow}`}
+                            className={`slot ${phase === 'verified' ? 'success' : ''} absolute top-1/2 left-1/2 -mt-[26px] -ml-[26px] pointer-events-none flex items-center justify-center w-[52px] h-[52px] bg-[#181a20] rounded-xl text-[#f0f2f5] text-xl font-semibold border ${borderColor} ${shadow}`}
                             style={{
                                 transition: 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)'
                             }}
