@@ -49,4 +49,7 @@ public interface ActivityRepository extends JpaRepository<Activity, UUID> {
            "WHERE a.user.id = :userId " +
            "GROUP BY a.sport")
     List<SportBreakdownProjection> getSportBreakdown(@Param("userId") UUID userId);
+
+    @Query("SELECT a.recordedAt FROM Activity a WHERE a.user.id = :userId ORDER BY a.recordedAt DESC")
+    List<Instant> findAllRecordedAtByUserId(@Param("userId") UUID userId);
 }

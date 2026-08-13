@@ -41,9 +41,17 @@ export interface DashboardSummary {
     currentRank: number;
 }
 
+export interface DashboardStreak {
+    currentStreak: number;
+    longestStreak: number;
+    activeToday: boolean;
+    lastActivityDate: string | null;
+}
+
 export interface DashboardData {
     user: User;
     summary: DashboardSummary;
+    streaks: DashboardStreak;
     activityHistory: ActivityHistory[];
     volumeOverTime: VolumeOverTime[];
     sportBreakdown: SportBreakdown[];

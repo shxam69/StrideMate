@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import StatCard from '../components/StatCard';
 import ActivityChart from '../components/ActivityChart';
 import ActivityList from '../components/ActivityList';
+import StreakCard from '../components/StreakCard';
 import { Trophy, Activity, Medal, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -60,7 +61,12 @@ const Dashboard: React.FC = () => {
                     <p className="text-base md:text-lg text-[var(--text-muted)]">Here's what's happening with your fitness journey today.</p>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 mb-8 md:mb-10">
+                    <StreakCard 
+                        currentStreak={data.streaks.currentStreak}
+                        longestStreak={data.streaks.longestStreak}
+                        activeToday={data.streaks.activeToday}
+                    />
                     <StatCard 
                         title="Total Points" 
                         value={data.summary.totalPoints.toLocaleString()} 

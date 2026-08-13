@@ -60,6 +60,11 @@ public class DashboardService {
         summary.setCurrentRank(currentRank);
         response.setSummary(summary);
 
+        // Fetch full history of recorded dates for streak calculation
+        List<java.time.Instant> allInstants = activityRepository.findAllRecordedAtByUserId(user.getId());
+        DashboardStreakDto streakDto = StreakCalculator.calculate(allInstants);
+        response.setStreaks(streakDto);
+
         List<Activity> history = activityRepository.findByUserIdOrderByRecordedAtDesc(user.getId());
         List<ActivityHistoryDto> historyDtos = history.stream().map(this::toHistoryDto).collect(Collectors.toList());
         response.setActivityHistory(historyDtos);

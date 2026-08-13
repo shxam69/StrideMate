@@ -6,6 +6,7 @@ import java.util.List;
 public class DashboardResponseDto {
     private UserDto user;
     private DashboardSummaryDto summary;
+    private DashboardStreakDto streaks;
     private List<ActivityHistoryDto> activityHistory;
     private List<VolumeOverTimeDto> volumeOverTime;
     private List<SportBreakdownDto> sportBreakdown;
@@ -15,6 +16,9 @@ public class DashboardResponseDto {
 
     public DashboardSummaryDto getSummary() { return summary; }
     public void setSummary(DashboardSummaryDto summary) { this.summary = summary; }
+
+    public DashboardStreakDto getStreaks() { return streaks; }
+    public void setStreaks(DashboardStreakDto streaks) { this.streaks = streaks; }
 
     public List<ActivityHistoryDto> getActivityHistory() { return activityHistory; }
     public void setActivityHistory(List<ActivityHistoryDto> activityHistory) { this.activityHistory = activityHistory; }

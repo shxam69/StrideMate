@@ -17,9 +17,16 @@ const Register: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const res = await api.post('/auth/register', { firstName, lastName, email, phoneNumber, password });
+            const payload = {
+                firstName: firstName.trim(),
+                lastName: lastName.trim(),
+                email: email.trim().toLowerCase(),
+                phoneNumber: phoneNumber.trim().replace(/\s+/g, ""),
+                password
+            };
+            const res = await api.post('/auth/register', payload);
             login(res.data.token, res.data.user);
-            navigate('/verify-phone', { state: { phoneNumber } });
+            navigate('/verify-phone', { state: { phoneNumber: payload.phoneNumber } });
         } catch (err: any) {
             setError(err.response?.data?.message || 'Registration failed');
         }

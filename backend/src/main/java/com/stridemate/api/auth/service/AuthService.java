@@ -46,11 +46,20 @@ public class AuthService {
             throw new DuplicateResourceException("User with this first and last name already exists");
         }
 
+        String normalizedPhone = request.getPhoneNumber();
+        if (normalizedPhone != null) {
+            normalizedPhone = normalizedPhone.trim().replaceAll("\\s+", "");
+        }
+
+        if (normalizedPhone != null && userRepository.existsByPhoneNumber(normalizedPhone)) {
+            throw new DuplicateResourceException("Phone number is already registered");
+        }
+
         User user = new User();
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setEmail(request.getEmail());
-        user.setPhoneNumber(request.getPhoneNumber());
+        user.setPhoneNumber(normalizedPhone);
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         user.setRole(Role.USER);
 
