@@ -39,8 +39,12 @@ public class AuthControllerTest {
 
     private HttpClient httpClient;
 
+    @Autowired
+    private com.stridemate.api.auth.repository.PasswordResetTokenRepository tokenRepository;
+
     @BeforeEach
     public void setup() {
+        tokenRepository.deleteAll();
         activityRepository.deleteAll();
         userRepository.deleteAll();
         httpClient = HttpClient.newHttpClient();

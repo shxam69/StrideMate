@@ -21,11 +21,13 @@ public class AuthController {
 
     private final AuthService authService;
     private final OtpService otpService;
+    private final com.stridemate.api.auth.service.PasswordResetService passwordResetService;
 
     @Autowired
-    public AuthController(AuthService authService, OtpService otpService) {
+    public AuthController(AuthService authService, OtpService otpService, com.stridemate.api.auth.service.PasswordResetService passwordResetService) {
         this.authService = authService;
         this.otpService = otpService;
+        this.passwordResetService = passwordResetService;
     }
 
     @PostMapping("/register")
@@ -66,5 +68,22 @@ public class AuthController {
     public ResponseEntity<?> resendOtp(@Valid @RequestBody OtpRequest request) {
         otpService.generateAndSendOtp(request.getPhoneNumber());
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody com.stridemate.api.auth.dto.ForgotPasswordRequest request) {
+        passwordResetService.processForgotPassword(request.getEmail());
+        // Generic success message
+        return ResponseEntity.ok("If an account exists for this email, a password reset link has been sent.");
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody com.stridemate.api.auth.dto.ResetPasswordRequest request) {
+        try {
+            passwordResetService.processResetPassword(request.getToken(), request.getNewPassword());
+            return ResponseEntity.ok("Password successfully reset.");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }
