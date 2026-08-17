@@ -50,8 +50,8 @@ const PhoneInput: React.FC<PhoneInputProps> = ({ label = "Phone Number", value, 
                 {label}
             </label>
             <div 
-                className={`flex h-12 bg-[var(--bg)]/50 border-[1.5px] rounded-xl overflow-hidden transition-all duration-200 ${
-                    isFocused ? 'border-[var(--accent)] ring-0' : 'border-[var(--border)]'
+                className={`flex items-center h-12 glass-input p-0 overflow-hidden transition-all duration-200 ${
+                    isFocused ? 'focus-within:border-[rgba(130,100,255,0.7)] focus-within:shadow-[0_0_0_3px_rgba(82,39,255,0.12)]' : ''
                 }`}
             >
                 <select

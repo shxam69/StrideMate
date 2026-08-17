@@ -7,7 +7,10 @@ const AuthLayout: React.FC = () => {
     const location = useLocation();
 
     return (
-        <div className="auth-page relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-[var(--bg)]">
+        <div
+  data-theme="dark"
+  className="auth-page relative min-h-screen w-full flex items-center justify-center overflow-hidden bg-[var(--bg)]"
+>
             {/* Base Background: WebGL Threads (Persistent) */}
             <div className="absolute inset-0 z-0 pointer-events-auto">
                 <AuthBackground />

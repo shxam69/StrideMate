@@ -24,11 +24,9 @@ const FloatingLabelInput: React.FC<FloatingLabelInputProps> = ({ label, classNam
                     props.onBlur?.(e);
                 }}
                 className={`
-                    block w-full px-4 pt-6 pb-2 text-[var(--text)] bg-[var(--bg)]/50 
-                    border-[1.5px] border-[var(--border)] rounded-xl appearance-none 
-                    focus:outline-none focus:ring-0 focus:border-[var(--accent)] 
-                    transition-colors duration-200 peer ${className}
-                `}
+    glass-input px-4 pt-6 pb-2 appearance-none
+    transition-colors duration-200 peer ${className}
+`}
                 placeholder=" "
                 {...props}
             />

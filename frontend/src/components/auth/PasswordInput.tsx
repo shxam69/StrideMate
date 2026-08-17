@@ -21,10 +21,8 @@ const PasswordInput: React.FC<PasswordInputProps> = ({ label = "Password", class
                     id={inputId}
                     type={showPassword ? "text" : "password"}
                     className={`
-                        block w-full h-12 pl-4 pr-12 text-[var(--text)] bg-[var(--bg)]/50 
-                        border-[1.5px] border-[var(--border)] rounded-xl
-                        focus:outline-none focus:ring-0 focus:border-[var(--accent)] 
-                        transition-all duration-200 ${className}
+                        glass-input h-12 pl-4 pr-12
+                        ${className}
                     `}
                     {...props}
                 />

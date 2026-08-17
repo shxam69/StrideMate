@@ -166,6 +166,7 @@ const WebThreads = ({
     canvas.style.width = '100%';
     canvas.style.height = '100%';
     canvas.style.display = 'block';
+    canvas.style.pointerEvents = 'none';
     container.appendChild(canvas);
 
     const geometry = new Triangle(gl);
@@ -224,21 +225,25 @@ const WebThreads = ({
     let currentActive = 0;
     let targetActive = 0;
 
-    const onMouseMove = e => {
-      const rect = canvas.getBoundingClientRect();
+    const onPointerMove = e => {
+      const rect = container.getBoundingClientRect();
       targetMouse[0] = (e.clientX - rect.left) / rect.width;
       targetMouse[1] = 1.0 - (e.clientY - rect.top) / rect.height;
-      targetActive = 1;
+
+      targetMouse[0] = Math.max(0, Math.min(1, targetMouse[0]));
+      targetMouse[1] = Math.max(0, Math.min(1, targetMouse[1]));
+
+      if (
+        e.clientX >= rect.left && e.clientX <= rect.right &&
+        e.clientY >= rect.top && e.clientY <= rect.bottom
+      ) {
+        targetActive = 1;
+      } else {
+        targetActive = 0;
+      }
     };
-    const onMouseEnter = () => {
-      targetActive = 1;
-    };
-    const onMouseLeave = () => {
-      targetActive = 0;
-    };
-    canvas.addEventListener('mousemove', onMouseMove);
-    canvas.addEventListener('mouseenter', onMouseEnter);
-    canvas.addEventListener('mouseleave', onMouseLeave);
+
+    window.addEventListener('pointermove', onPointerMove);
 
     let raf = 0;
     let isVisible = true;
@@ -291,9 +296,7 @@ const WebThreads = ({
       ro.disconnect();
       io.disconnect();
       document.removeEventListener('visibilitychange', onVisibility);
-      canvas.removeEventListener('mousemove', onMouseMove);
-      canvas.removeEventListener('mouseenter', onMouseEnter);
-      canvas.removeEventListener('mouseleave', onMouseLeave);
+      window.removeEventListener('pointermove', onPointerMove);
       ctxMap.delete(container);
       try {
         container.removeChild(canvas);

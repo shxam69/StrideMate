@@ -20,10 +20,8 @@ const EmailInput: React.FC<EmailInputProps> = ({ label = "Email address", classN
                     id={inputId}
                     type="email"
                     className={`
-                        block w-full h-12 pl-4 pr-12 text-[var(--text)] bg-[var(--bg)]/50 
-                        border-[1.5px] border-[var(--border)] rounded-xl
-                        focus:outline-none focus:ring-0 focus:border-[var(--accent)] 
-                        transition-all duration-200 ${className}
+                        glass-input h-12 pl-4 pr-12
+                        ${className}
                     `}
                     {...props}
                 />
