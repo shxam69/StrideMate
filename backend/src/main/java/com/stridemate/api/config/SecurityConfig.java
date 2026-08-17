@@ -71,7 +71,7 @@ public class SecurityConfig {
         
         // Allow production and local development origins explicitly
         configuration.setAllowedOrigins(java.util.Arrays.asList(
-                "https://stridemate-eight.vercel.app",
+            "https://stride-mate-eight.vercel.app",
                 "http://localhost:5173",
                 "http://127.0.0.1:5173"
         ));
