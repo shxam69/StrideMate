@@ -12,9 +12,13 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class OtpService {
+
+    private static final Logger logger = LoggerFactory.getLogger(OtpService.class);
 
     private final OtpRepository otpRepository;
     private final UserRepository userRepository;
@@ -41,6 +45,7 @@ public class OtpService {
         // Generate a 6-digit OTP
         int otpValue = 100000 + secureRandom.nextInt(900000); // 100000 to 999999
         String otpStr = String.valueOf(otpValue);
+        logger.info("Generated new OTP for user {}", email);
 
         // Store OTP hash
         OtpEntity otpEntity = new OtpEntity();
@@ -49,9 +54,17 @@ public class OtpService {
         otpEntity.setExpiresAt(Instant.now().plus(5, ChronoUnit.MINUTES));
         otpEntity.setAttempts(0);
         otpRepository.save(otpEntity);
+        logger.info("Persisted OTP hash for user {}", email);
 
         // Send via SMTP
-        emailService.sendOtpEmail(email, otpStr);
+        try {
+            logger.info("Starting email-send for user {}", email);
+            emailService.sendOtpEmail(email, otpStr);
+            logger.info("Completed email-send successfully for user {}", email);
+        } catch (Exception e) {
+            logger.error("Failed email-send for user {}: {}", email, e.getMessage());
+            throw new RuntimeException("Failed to send OTP email. Please try again later.");
+        }
     }
 
     public boolean verifyOtp(String email, String otpCode) {
