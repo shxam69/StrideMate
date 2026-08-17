@@ -2,27 +2,29 @@ package com.stridemate.api.auth.service;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import com.resend.Resend;
+import com.resend.core.exception.ResendException;
+import com.resend.services.emails.model.CreateEmailOptions;
+import com.resend.services.emails.model.CreateEmailResponse;
 
 @Service
 @Profile("prod")
-public class SmtpEmailService implements EmailService {
+public class ResendEmailService implements EmailService {
 
-    private final JavaMailSender mailSender;
+    private static final String FROM_EMAIL =
+            "StrideMate <noreply@mail.vijaymetalworks.com>";
 
-    @Value("${mail.from}")
-    private String fromEmail;
+    private final Resend resend;
 
     @Value("${frontend.url:https://stride-mate-eight.vercel.app}")
     private String frontendUrl;
 
-    public SmtpEmailService(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
+    public ResendEmailService(
+            @Value("${RESEND_API_KEY}") String apiKey
+    ) {
+        this.resend = new Resend(apiKey);
     }
 
     @Override
@@ -79,27 +81,31 @@ public class SmtpEmailService implements EmailService {
                 </div>
                 """.formatted(otp);
 
+        CreateEmailOptions params = CreateEmailOptions.builder()
+                .from(FROM_EMAIL)
+                .to(toEmail)
+                .subject("StrideMate verification code")
+                .html(html)
+                .build();
+
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper =
-                    new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
-            helper.setSubject("StrideMate verification code");
-            helper.setText(html, true);
-
-            mailSender.send(message);
+            CreateEmailResponse response =
+                    resend.emails().send(params);
 
             System.out.println(
-                    "OTP email sent successfully to: " + toEmail
+                    "OTP email sent successfully to "
+                            + toEmail
+                            + ". Resend ID: "
+                            + response.getId()
             );
 
-        } catch (MessagingException e) {
+        } catch (ResendException e) {
 
             System.err.println(
                     "Failed to send OTP email to "
-                            + toEmail + ": "
+                            + toEmail
+                            + ": "
                             + e.getMessage()
             );
 
@@ -117,7 +123,9 @@ public class SmtpEmailService implements EmailService {
     ) {
 
         String resetUrl =
-                frontendUrl + "/reset-password?token=" + resetToken;
+                frontendUrl
+                        + "/reset-password?token="
+                        + resetToken;
 
         String html = """
                 <div style="
@@ -135,7 +143,8 @@ public class SmtpEmailService implements EmailService {
                     </h2>
 
                     <p>
-                        You requested to reset your StrideMate password.
+                        You requested to reset your
+                        StrideMate password.
                     </p>
 
                     <p>
@@ -171,28 +180,31 @@ public class SmtpEmailService implements EmailService {
                 </div>
                 """.formatted(resetUrl);
 
+        CreateEmailOptions params = CreateEmailOptions.builder()
+                .from(FROM_EMAIL)
+                .to(toEmail)
+                .subject("StrideMate - Password Reset Request")
+                .html(html)
+                .build();
+
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper =
-                    new MimeMessageHelper(message, true, "UTF-8");
 
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
-            helper.setSubject("StrideMate - Password Reset Request");
-            helper.setText(html, true);
-
-            mailSender.send(message);
+            CreateEmailResponse response =
+                    resend.emails().send(params);
 
             System.out.println(
-                    "Password reset email sent successfully to: "
+                    "Password reset email sent successfully to "
                             + toEmail
+                            + ". Resend ID: "
+                            + response.getId()
             );
 
-        } catch (MessagingException e) {
+        } catch (ResendException e) {
 
             System.err.println(
                     "Failed to send password reset email to "
-                            + toEmail + ": "
+                            + toEmail
+                            + ": "
                             + e.getMessage()
             );
 
