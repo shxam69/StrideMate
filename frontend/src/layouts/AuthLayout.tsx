@@ -1,10 +1,11 @@
 import React from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { useLocation, useOutlet } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import AuthBackground from '../components/auth/AuthBackground';
 
 const AuthLayout: React.FC = () => {
     const location = useLocation();
+    const outlet = useOutlet();
 
     return (
         <div
@@ -30,7 +31,7 @@ const AuthLayout: React.FC = () => {
                         transition={{ duration: 0.4, ease: "easeOut" }}
                         className="w-full max-w-6xl pointer-events-auto flex justify-center"
                     >
-                        <Outlet />
+                        {outlet && React.cloneElement(outlet as React.ReactElement, { key: location.pathname })}
                     </motion.div>
                 </AnimatePresence>
             </div>
