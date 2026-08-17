@@ -2,28 +2,27 @@ package com.stridemate.api.auth.service;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import com.resend.Resend;
-import com.resend.core.exception.ResendException;
-import com.resend.services.emails.model.CreateEmailOptions;
-import com.resend.services.emails.model.CreateEmailResponse;
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
+
 @Service
 @Profile("prod")
-public class ResendEmailService implements EmailService {
+public class SmtpEmailService implements EmailService {
 
-    private static final String FROM_EMAIL =
-            "StrideMate <onboarding@resend.dev>";
+    private final JavaMailSender mailSender;
 
-    private final Resend resend;
+    @Value("${mail.from}")
+    private String fromEmail;
 
     @Value("${frontend.url:https://stride-mate-eight.vercel.app}")
     private String frontendUrl;
 
-    public ResendEmailService(
-            @Value("${RESEND_API_KEY}") String apiKey
-    ) {
-        this.resend = new Resend(apiKey);
+    public SmtpEmailService(JavaMailSender mailSender) {
+        this.mailSender = mailSender;
     }
 
     @Override
@@ -80,25 +79,27 @@ public class ResendEmailService implements EmailService {
                 </div>
                 """.formatted(otp);
 
-        CreateEmailOptions params = CreateEmailOptions.builder()
-                .from(FROM_EMAIL)
-                .to(toEmail)
-                .subject("StrideMate verification code")
-                .html(html)
-                .build();
-
         try {
-            CreateEmailResponse response = resend.emails().send(params);
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper =
+                    new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject("StrideMate verification code");
+            helper.setText(html, true);
+
+            mailSender.send(message);
 
             System.out.println(
-                    "OTP email sent successfully. Resend ID: "
-                            + response.getId()
+                    "OTP email sent successfully to: " + toEmail
             );
 
-        } catch (ResendException e) {
+        } catch (MessagingException e) {
 
             System.err.println(
-                    "Failed to send OTP email: "
+                    "Failed to send OTP email to "
+                            + toEmail + ": "
                             + e.getMessage()
             );
 
@@ -170,25 +171,28 @@ public class ResendEmailService implements EmailService {
                 </div>
                 """.formatted(resetUrl);
 
-        CreateEmailOptions params = CreateEmailOptions.builder()
-                .from(FROM_EMAIL)
-                .to(toEmail)
-                .subject("StrideMate - Password Reset Request")
-                .html(html)
-                .build();
-
         try {
-            CreateEmailResponse response = resend.emails().send(params);
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper =
+                    new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject("StrideMate - Password Reset Request");
+            helper.setText(html, true);
+
+            mailSender.send(message);
 
             System.out.println(
-                    "Password reset email sent successfully. Resend ID: "
-                            + response.getId()
+                    "Password reset email sent successfully to: "
+                            + toEmail
             );
 
-        } catch (ResendException e) {
+        } catch (MessagingException e) {
 
             System.err.println(
-                    "Failed to send password reset email: "
+                    "Failed to send password reset email to "
+                            + toEmail + ": "
                             + e.getMessage()
             );
 
