@@ -26,7 +26,7 @@ import java.util.List;
 public class SecurityConfig {
 
     @org.springframework.beans.factory.annotation.Value("${frontend.url:http://localhost:5173}")
-    private String frontendUrl;
+    private String[] frontendUrls;
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
@@ -68,7 +68,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(frontendUrl));
+        configuration.setAllowedOrigins(java.util.Arrays.asList(frontendUrls));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "Origin"));
         

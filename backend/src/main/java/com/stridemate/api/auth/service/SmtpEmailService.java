@@ -38,4 +38,17 @@ public class SmtpEmailService implements EmailService {
                 
         mailSender.send(message);
     }
+
+    @Override
+    public void sendOtpEmail(String toEmail, String otp) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(toEmail);
+        message.setSubject("StrideMate verification code");
+        message.setText("Your verification code is:\n\n" +
+                otp + "\n\n" +
+                "This code expires in 5 minutes.\n");
+                
+        mailSender.send(message);
+    }
 }

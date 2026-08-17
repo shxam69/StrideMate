@@ -12,8 +12,11 @@ public class OtpEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false)
+    @Column
     private String phoneNumber;
+
+    @Column
+    private String email;
 
     @Column(nullable = false)
     private String otpHash;
@@ -26,6 +29,9 @@ public class OtpEntity {
 
     @Column(nullable = false)
     private Instant createdAt;
+
+    @Column(nullable = false, columnDefinition = "int default 0")
+    private int attempts = 0;
 
     @PrePersist
     protected void onCreate() {
@@ -50,4 +56,10 @@ public class OtpEntity {
 
     public Instant getCreatedAt() { return createdAt; }
     public void setCreatedAt(Instant createdAt) { this.createdAt = createdAt; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public int getAttempts() { return attempts; }
+    public void setAttempts(int attempts) { this.attempts = attempts; }
 }

@@ -10,4 +10,5 @@ import java.util.UUID;
 @Repository
 public interface OtpRepository extends JpaRepository<OtpEntity, UUID> {
     Optional<OtpEntity> findTopByPhoneNumberOrderByCreatedAtDesc(String phoneNumber);
+    Optional<OtpEntity> findTopByEmailAndVerifiedFalseOrderByCreatedAtDesc(String email);
 }

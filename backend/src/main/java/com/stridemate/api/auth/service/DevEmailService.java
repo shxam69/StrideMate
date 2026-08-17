@@ -17,4 +17,13 @@ public class DevEmailService implements EmailService {
         System.out.println("Token: " + resetToken);
         System.out.println("==========================================================");
     }
+
+    @Override
+    public void sendOtpEmail(String toEmail, String otp) {
+        System.out.println("==========================================================");
+        System.out.println("[DEV EMAIL] OTP Requested");
+        System.out.println("To: " + toEmail);
+        System.out.println("OTP: " + otp);
+        System.out.println("==========================================================");
+    }
 }

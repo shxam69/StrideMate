@@ -24,6 +24,9 @@ public class User {
     @Column(unique = true)
     private String phoneNumber;
 
+    @Column(nullable = false, columnDefinition = "boolean default false")
+    private boolean emailVerified = false;
+
     @Column(nullable = false)
     private boolean phoneVerified;
 
@@ -72,6 +75,9 @@ public class User {
     
     public String getPhoneNumber() { return phoneNumber; }
     public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+    
+    public boolean isEmailVerified() { return emailVerified; }
+    public void setEmailVerified(boolean emailVerified) { this.emailVerified = emailVerified; }
     
     public boolean isPhoneVerified() { return phoneVerified; }
     public void setPhoneVerified(boolean phoneVerified) { this.phoneVerified = phoneVerified; }

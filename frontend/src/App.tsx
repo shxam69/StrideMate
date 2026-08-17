@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Leaderboard from './pages/Leaderboard';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import AuthLayout from './layouts/AuthLayout';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     const { user, loading } = useAuth();
@@ -29,11 +30,13 @@ const App: React.FC = () => {
                 </div>
                 <Router>
                     <Routes>
-                        <Route path="/login" element={<Login />} />
-                        <Route path="/register" element={<Register />} />
-                        <Route path="/forgot-password" element={<ForgotPassword />} />
-                        <Route path="/reset-password" element={<ResetPassword />} />
-                        <Route path="/verify-phone" element={<OtpVerification />} />
+                        <Route element={<AuthLayout />}>
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/register" element={<Register />} />
+                            <Route path="/forgot-password" element={<ForgotPassword />} />
+                            <Route path="/reset-password" element={<ResetPassword />} />
+                            <Route path="/verify-phone" element={<OtpVerification />} />
+                        </Route>
                         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                         <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
                         <Route path="/add-activity" element={<ProtectedRoute><AddActivity /></ProtectedRoute>} />

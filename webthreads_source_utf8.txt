@@ -1,0 +1,251 @@
+﻿<USER_REQUEST>
+I want you to ONLY replace the STATIC background of the StrideMate authentication pages with the WebThreads animated background component I provided.
+
+IMPORTANT:
+- Do NOT redesign the Login UI.
+- Do NOT redesign the Register UI.
+- Do NOT change the authentication logic.
+- Do NOT change API calls, payloads, routes, validation, password reset, OTP, or backend behavior.
+- Do NOT change the existing cards, inputs, buttons, typography, spacing, icons, or layout unless absolutely necessary to layer the background correctly.
+- The current Login and Register UI should remain visually identical.
+- ONLY replace the static page background.
+
+COMPONENT TO USE:
+Use the exact WebThreads component source I provided.
+It is the React Bits WebThreads component using OGL.
+Install the required dependency if it is not already installed:
+
+npm install ogl
+
+Create:
+frontend/src/components/background/WebThreads.jsx
+frontend/src/components/background/WebThreads.css
+
+Use the exact implementation I provided rather than creating your own canvas/WebGL implementation.
+
+BACKGROUND CONFIGURATION:
+
+<WebThreads
+  color1="#5227FF"
+  color2="#FF9FFC"
+  color3="#FFFFFF"
+  speed={0.2}
+  threadCount={6}
+  frequency={5.0}
+  spread={0.18}
+  taper={1.0}
+  position={0.5}
+  fanMode="center"
+  glow={0.02}
+  falloff={0.6}
+  thickness={1.1}
+  brightness={0.6}
+  opacity={1.0}
+  mirror={true}
+  shimmer={false}
+  grain={true}
+  grainIntensity={0.05}
+  mouseInteraction={true}
+  mouseStrength={0.3}
+/>
+
+These are the exact supplied component defaults/configuration. The component supports mouse interaction and animated weaving. 
+
+AUTH PAGE STRUCTURE:
+
+The background must sit BEHIND the entire authentication page.
+
+Use this conceptual structure:
+
+<div className="auth-page">
+    <div className="auth-background">
+        <WebThreads ... />
+    </div>
+
+    <div className="auth-content">
+        {/* EXISTING LOGIN OR REGISTER UI */}
+    </div>
+</div>
+
+CSS requirements:
+
+.auth-page {
+    position: relative;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+.auth-background {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: auto;
+}
+
+.auth-content {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+}
+
+The existing authentication card must remain above the WebThreads background.
+
+IMPORTANT LAYERING:
+- WebThreads = background layer
+- Login/Register content = foreground layer
+- Do not let the WebThreads canvas interfere with clicking inputs/buttons.
+- If pointer interaction causes the canvas to block form interaction, set the appropriate pointer-events behavior or move mouse tracking to the background container while preserving interaction.
+- The login/register controls MUST remain fully clickable.
+
+VISUAL TARGET:
+
+I want a premium animated purple/pink/white WebGL background.
+
+The background should feel:
+- modern
+- subtle
+- premium
+- smooth
+- futuristic
+- suitable for a fitness SaaS
+- NOT overly bright
+- NOT distracting from the authentication form
+
+Do NOT put the WebThreads inside the authentication card.
+
+Do NOT make the background a small rectangle.
+
+It must cover the FULL viewport.
+
+LOGIN:
+Apply the exact same WebThreads background to Login.tsx.
+
+REGISTER:
+Apply the exact same WebThreads background to Register.tsx.
+
+SHARED COMPONENT:
+Prefer creating a reusable AuthBackground component:
+
+frontend/src/components/auth/AuthBackground.tsx
+
+Example:
+
+import WebThreads from "../background/WebThreads";
+
+export default function AuthBackground() {
+    return (
+        <div className="auth-background">
+            <WebThreads
+                color1="#5227FF"
+                color2="#FF9FFC"
+                color3="#FFFFFF"
+                speed={0.2}
+                threadCount={6}
+                frequency={5.0}
+                spread={0.18}
+                taper={1.0}
+                position={0.5}
+                fanMode="center"
+                glow={0.02}
+                falloff={0.6}
+                thickness={1.1}
+                brightness={0.6}
+                opacity={1.0}
+                mirror={true}
+                shimmer={false}
+                grain={true}
+                grainIntensity={0.05}
+                mouseInteraction={true}
+                mouseStrength={0.3}
+            />
+        </div>
+    );
+}
+
+Then use AuthBackground in BOTH Login.tsx and Register.tsx.
+
+DO NOT duplicate the WebThreads implementation inside Login.tsx and Register.tsx.
+
+PRESERVE:
+- Existing Login layout
+- Existing Register layout
+- Existing responsive behavior
+- Existing auth components
+- Existing EmailInput
+- Existing PasswordInput
+- Existing PhoneInput
+- Existing FloatingLabelInput
+- Existing forgot-password link
+- Existing confirm-password validation
+- Existing API payloads
+
+PERFORMANCE:
+The WebThreads component already contains visibility handling and requestAnimationFrame lifecycle management.
+Do not remove that behavior.
+Do not create multiple WebGL canvases unnecessarily.
+Only one WebThreads instance should exist per currently mounted auth page.
+
+RESPONSIVE:
+Make sure the background covers:
+- desktop
+- laptop
+- tablet
+- mobile
+
+Do not change the existing mobile form layout.
+
+FINAL VERIFICATION:
+
+After implementation run:
+
+npm run build
+
+The build MUST pass with zero TypeScript/Vite errors.
+
+Then verify:
+1. Login page loads.
+2. Register page loads.
+3. Background animates.
+4. Mouse interaction works.
+5. Inputs remain clickable.
+6. Password eye buttons remain clickable.
+7. Forgot Password remains clickable.
+8. Sign In remains functional.
+9. Sign Up remains functional.
+10. No backend/API/authentication code was changed.
+
+Finally provide:
+- exact files changed
+- dependency installed
+- build result
+- confirmation that Login and Register use the same reusable background
+- confirmation that auth/API logic was untouched
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-08-16T12:41:06+05:30.
+</ADDITIONAL_METADATA>
+<USER_REQUEST>
+The exact WebThreads source is already available in the attached source material from this conversation.
+
+DO NOT ask me to paste WebThreads.jsx or WebThreads.css again.
+
+Use the supplied WebThreads source exactly as provided.
+
+Proceed with the implementation plan:
+- install ogl
+- create WebThreads.jsx
+- create WebThreads.css
+- create reusable AuthBackground
+- apply it to Login.tsx and Register.tsx
+- preserve all existing authentication logic
+- preserve all existing UI components and forms
+- run npm run build
+- report the exact files changed and build result
+
+Do NOT create an alternative implementation.
+Do NOT approximate the WebThreads effect.
+Use the supplied source exactly.
+</USER_REQUEST>
+<ADDITIONAL_METADATA>
+The current local time is: 2026-08-16T12:52:25+05:30.
+</ADDITIONAL_METADATA>

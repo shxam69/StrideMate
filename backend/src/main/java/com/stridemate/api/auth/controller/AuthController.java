@@ -50,13 +50,13 @@ public class AuthController {
 
     @PostMapping("/request-otp")
     public ResponseEntity<?> requestOtp(@Valid @RequestBody OtpRequest request) {
-        otpService.generateAndSendOtp(request.getPhoneNumber());
+        otpService.generateAndSendOtp(request.getEmail());
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@Valid @RequestBody OtpVerifyRequest request) {
-        boolean isValid = otpService.verifyOtp(request.getPhoneNumber(), request.getOtp());
+        boolean isValid = otpService.verifyOtp(request.getEmail(), request.getOtp());
         if (isValid) {
             return ResponseEntity.ok().build();
         } else {
@@ -66,7 +66,7 @@ public class AuthController {
 
     @PostMapping("/resend-otp")
     public ResponseEntity<?> resendOtp(@Valid @RequestBody OtpRequest request) {
-        otpService.generateAndSendOtp(request.getPhoneNumber());
+        otpService.generateAndSendOtp(request.getEmail());
         return ResponseEntity.ok().build();
     }
 

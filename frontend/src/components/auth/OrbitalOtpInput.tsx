@@ -26,7 +26,7 @@ const OrbitalOtpInput: React.FC<OrbitalOtpInputProps> = ({ value, onChange, onCo
     }, [phase]);
 
     useEffect(() => {
-        if (value.length === 4 && phase === 'entering') {
+        if (value.length === 6 && phase === 'entering') {
             runAnimationSequence();
         }
     }, [value, phase]);
@@ -121,7 +121,7 @@ const OrbitalOtpInput: React.FC<OrbitalOtpInputProps> = ({ value, onChange, onCo
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (phase !== 'entering' && phase !== 'error') return;
-        const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
+        const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
         onChange(val);
     };
 
@@ -140,7 +140,7 @@ const OrbitalOtpInput: React.FC<OrbitalOtpInputProps> = ({ value, onChange, onCo
                     type="tel"
                     inputMode="numeric"
                     autoComplete="one-time-code"
-                    maxLength={4}
+                    maxLength={6}
                     value={phase === 'entering' || phase === 'error' ? value : ''}
                     onChange={handleChange}
                     className="absolute top-0 left-0 w-full h-full opacity-0 z-50 text-transparent bg-transparent border-none outline-none focus:outline-none focus:ring-0"
@@ -196,7 +196,7 @@ const OrbitalOtpInput: React.FC<OrbitalOtpInputProps> = ({ value, onChange, onCo
                 </div>
 
                 {/* OTP Slots */}
-                {[0, 1, 2, 3].map((index) => {
+                {[0, 1, 2, 3, 4, 5].map((index) => {
                     const digit = value[index] || '';
                     const isActive = value.length === index && (phase === 'entering' || phase === 'error');
                     
@@ -229,16 +229,20 @@ const OrbitalOtpInput: React.FC<OrbitalOtpInputProps> = ({ value, onChange, onCo
             
             <style>{`
                 /* Horizontal Line Positions */
-                .slot[data-state="line"][data-index="0"] { transform: translate(-90px, 0); }
-                .slot[data-state="line"][data-index="1"] { transform: translate(-30px, 0); }
-                .slot[data-state="line"][data-index="2"] { transform: translate(30px, 0); }
-                .slot[data-state="line"][data-index="3"] { transform: translate(90px, 0); }
+                .slot[data-state="line"][data-index="0"] { transform: translate(-130px, 0); }
+                .slot[data-state="line"][data-index="1"] { transform: translate(-78px, 0); }
+                .slot[data-state="line"][data-index="2"] { transform: translate(-26px, 0); }
+                .slot[data-state="line"][data-index="3"] { transform: translate(26px, 0); }
+                .slot[data-state="line"][data-index="4"] { transform: translate(78px, 0); }
+                .slot[data-state="line"][data-index="5"] { transform: translate(130px, 0); }
 
                 /* Circular Orbit Positions */
                 .slot[data-state="orbit"][data-index="0"] { transform: translate(0px, -66px); }
-                .slot[data-state="orbit"][data-index="1"] { transform: translate(66px, 0px); }
-                .slot[data-state="orbit"][data-index="2"] { transform: translate(0px, 66px); }
-                .slot[data-state="orbit"][data-index="3"] { transform: translate(-66px, 0px); }
+                .slot[data-state="orbit"][data-index="1"] { transform: translate(57px, -33px); }
+                .slot[data-state="orbit"][data-index="2"] { transform: translate(57px, 33px); }
+                .slot[data-state="orbit"][data-index="3"] { transform: translate(0px, 66px); }
+                .slot[data-state="orbit"][data-index="4"] { transform: translate(-57px, 33px); }
+                .slot[data-state="orbit"][data-index="5"] { transform: translate(-57px, -33px); }
 
                 /* Success Collapse */
                 .slot.success {

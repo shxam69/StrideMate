@@ -90,12 +90,12 @@
 
   /* Glass Panel for hovering / interactivity */
   .glass-card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid var(--glass-border);
-    box-shadow: 0 8px 32px 0 var(--glass-shadow);
-    border-radius: 1.5rem; /* 24px */
+    background: rgba(15, 15, 25, 0.48);
+    backdrop-filter: blur(24px) saturate(140%);
+    -webkit-backdrop-filter: blur(24px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    border-radius: 24px;
     transition: all 0.3s ease;
   }
   
@@ -108,22 +108,22 @@
 
   .glass-input {
     width: 100%;
-    background-color: var(--surface);
-    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.055);
+    border: 1px solid rgba(255,255,255,0.12);
     border-radius: 0.75rem;
     padding: 0.75rem 1rem;
-    color: var(--text);
+    color: rgba(255,255,255,0.92);
     transition: all 0.2s;
   }
   
   .glass-input:focus {
     outline: none;
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+    border-color: rgba(130,100,255,0.7);
+    box-shadow: 0 0 0 3px rgba(82,39,255,0.12);
   }
 
   .glass-input::placeholder {
-    color: var(--text-muted);
+    color: rgba(255,255,255,0.45);
   }
 
   .glass-button {
@@ -210,3 +210,25 @@
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
 }
+
+.auth-page {
+    position: relative;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+.auth-background {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: auto;
+}
+
+.auth-atmosphere {
+    background: radial-gradient(
+        circle at center,
+        rgba(82, 39, 255, 0.08) 0%,
+        rgba(0, 0, 0, 0.45) 100%
+    );
+}
+

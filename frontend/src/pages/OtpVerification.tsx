@@ -13,7 +13,7 @@ const OtpVerification: React.FC = () => {
 
     const location = useLocation();
     const navigate = useNavigate();
-    const phoneNumber = location.state?.phoneNumber;
+    const email = location.state?.email;
     // Register.tsx (confirmed) does not call request-otp itself, so this
     // screen is the sole trigger for OTP generation. The otpRequested flag
     // is kept as an escape hatch only — if Register.tsx is ever changed to
@@ -22,17 +22,17 @@ const OtpVerification: React.FC = () => {
     const alreadyRequested = Boolean(location.state?.otpRequested);
 
     useEffect(() => {
-        if (!phoneNumber) {
+        if (!email) {
             navigate('/register');
         }
-    }, [phoneNumber, navigate]);
+    }, [email, navigate]);
 
     // Auto-request the OTP the moment this screen is reached, unless the
     // caller already triggered it. This is what makes OTP generation
     // "automatic after registration" without Register.tsx needing to know
     // anything about the OTP endpoint.
     useEffect(() => {
-        if (!phoneNumber || hasRequestedRef.current) return;
+        if (!email || hasRequestedRef.current) return;
 
         if (alreadyRequested) {
             setCountdown(24);
@@ -42,7 +42,7 @@ const OtpVerification: React.FC = () => {
         hasRequestedRef.current = true;
         sendOtp();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [phoneNumber]);
+    }, [email]);
 
     useEffect(() => {
         let timer: ReturnType<typeof setInterval>;
@@ -56,7 +56,7 @@ const OtpVerification: React.FC = () => {
         setIsSendingOtp(true);
         setErrorMsg('');
         try {
-            await api.post('/auth/request-otp', { phoneNumber });
+            await api.post('/auth/request-otp', { email });
             setCountdown(24);
         } catch (err: any) {
             setErrorMsg(err.response?.data?.message || 'Failed to send verification code. Please try again.');
@@ -69,7 +69,7 @@ const OtpVerification: React.FC = () => {
         setIsError(false);
         setErrorMsg('');
         try {
-            await api.post('/auth/verify-otp', { phoneNumber, otp: code });
+            await api.post('/auth/verify-otp', { email, otp: code });
 
             // Let the checkmark/convergence animation finish playing before
             // navigating away.
@@ -97,7 +97,7 @@ const OtpVerification: React.FC = () => {
         if (countdown > 0) return;
 
         try {
-            await api.post('/auth/resend-otp', { phoneNumber });
+            await api.post('/auth/resend-otp', { email });
             setCountdown(24);
             setOtp('');
             setIsError(false);
@@ -107,21 +107,25 @@ const OtpVerification: React.FC = () => {
         }
     };
 
-    if (!phoneNumber) return null;
+    if (!email) return null;
 
-    const maskedPhone = phoneNumber.substring(0, 4) + ' •••• ' + phoneNumber.substring(phoneNumber.length - 4);
+    // Split email and domain to mask it safely
+    const [localPart, domain] = email.split('@');
+    const maskedEmail = localPart.length > 2
+        ? `${localPart.substring(0, 2)}***@${domain}`
+        : `***@${domain}`;
 
     return (
         <div className="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 relative z-10">
             <div className="sm:mx-auto sm:w-full sm:max-w-md px-4 sm:px-0">
                 <div className="glass-card py-12 px-6 sm:px-12 relative overflow-hidden flex flex-col items-center">
 
-                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-[var(--text)] mb-3 text-center">Verify your number</h2>
+                    <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-[var(--text)] mb-3 text-center">Verify your email</h2>
                     <p className="text-[var(--text-muted)] text-sm text-center max-w-[280px] mb-10">
                         {isSendingOtp ? (
                             'Sending your code...'
                         ) : (
-                            <>Enter the 4-digit code we sent to <span className="text-[var(--text)] font-medium">{maskedPhone}</span>.</>
+                            <>Enter the 6-digit code we sent to <span className="text-[var(--text)] font-medium">{maskedEmail}</span>.</>
                         )}
                     </p>
 

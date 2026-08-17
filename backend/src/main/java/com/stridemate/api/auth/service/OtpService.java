@@ -19,40 +19,43 @@ public class OtpService {
     private final OtpRepository otpRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
     private final SecureRandom secureRandom = new SecureRandom();
 
     @Autowired
-    public OtpService(OtpRepository otpRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public OtpService(OtpRepository otpRepository, UserRepository userRepository, PasswordEncoder passwordEncoder, EmailService emailService) {
         this.otpRepository = otpRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
-    public void generateAndSendOtp(String phoneNumber) {
-        Optional<OtpEntity> recentOtpOpt = otpRepository.findTopByPhoneNumberOrderByCreatedAtDesc(phoneNumber);
+    public void generateAndSendOtp(String email) {
+        Optional<OtpEntity> recentOtpOpt = otpRepository.findTopByEmailAndVerifiedFalseOrderByCreatedAtDesc(email);
         if (recentOtpOpt.isPresent()) {
             if (Instant.now().isBefore(recentOtpOpt.get().getCreatedAt().plus(60, ChronoUnit.SECONDS))) {
                 throw new com.stridemate.api.exception.RateLimitException("Please wait 60 seconds before requesting a new OTP");
             }
         }
 
-        // Generate a 4-digit OTP
-        int otpValue = 1000 + secureRandom.nextInt(9000); // 1000 to 9999
+        // Generate a 6-digit OTP
+        int otpValue = 100000 + secureRandom.nextInt(900000); // 100000 to 999999
         String otpStr = String.valueOf(otpValue);
 
         // Store OTP hash
         OtpEntity otpEntity = new OtpEntity();
-        otpEntity.setPhoneNumber(phoneNumber);
+        otpEntity.setEmail(email);
         otpEntity.setOtpHash(passwordEncoder.encode(otpStr));
         otpEntity.setExpiresAt(Instant.now().plus(5, ChronoUnit.MINUTES));
+        otpEntity.setAttempts(0);
         otpRepository.save(otpEntity);
 
-        // DEV ONLY: Log plaintext OTP
-        System.out.println("[DEV OTP] phone=" + phoneNumber + " otp=" + otpStr);
+        // Send via SMTP
+        emailService.sendOtpEmail(email, otpStr);
     }
 
-    public boolean verifyOtp(String phoneNumber, String otpCode) {
-        Optional<OtpEntity> latestOtpOpt = otpRepository.findTopByPhoneNumberOrderByCreatedAtDesc(phoneNumber);
+    public boolean verifyOtp(String email, String otpCode) {
+        Optional<OtpEntity> latestOtpOpt = otpRepository.findTopByEmailAndVerifiedFalseOrderByCreatedAtDesc(email);
         
         if (latestOtpOpt.isEmpty()) {
             return false;
@@ -60,8 +63,8 @@ public class OtpService {
 
         OtpEntity latestOtp = latestOtpOpt.get();
 
-        // Check if verified
-        if (latestOtp.isVerified()) {
+        // Check if max attempts reached
+        if (latestOtp.getAttempts() >= 5) {
             return false;
         }
 
@@ -72,6 +75,8 @@ public class OtpService {
 
         // Verify hash
         if (!passwordEncoder.matches(otpCode, latestOtp.getOtpHash())) {
+            latestOtp.setAttempts(latestOtp.getAttempts() + 1);
+            otpRepository.save(latestOtp);
             return false;
         }
 
@@ -79,9 +84,9 @@ public class OtpService {
         latestOtp.setVerified(true);
         otpRepository.save(latestOtp);
 
-        // Update user if they exist with this phone number
-        userRepository.findByPhoneNumber(phoneNumber).ifPresent(user -> {
-            user.setPhoneVerified(true);
+        // Update user
+        userRepository.findByEmail(email).ifPresent(user -> {
+            user.setEmailVerified(true);
             userRepository.save(user);
         });
 
