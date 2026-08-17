@@ -93,20 +93,10 @@ public class PasswordResetTest {
         assertEquals("If an account exists for this email, a password reset link has been sent.", response.body());
         assertEquals(1, tokenRepository.count());
 
-        // Second request same UTC day returns 200 but sends no email and creates no token
+        // Second request returns 200 and creates a second token (rate limit removed)
         HttpResponse<String> response2 = sendPostRequest("/api/auth/forgot-password", "{\"email\":\"" + testUser.getEmail() + "\"}");
         assertEquals(200, response2.statusCode());
         assertEquals("If an account exists for this email, a password reset link has been sent.", response2.body());
-        assertEquals(1, tokenRepository.count()); // Count remains 1
-
-        // Next UTC calendar day allows a new request
-        // To simulate this, we can backdate the existing token's createdAt to yesterday
-        PasswordResetToken existingToken = tokenRepository.findAll().get(0);
-        existingToken.setCreatedAt(Instant.now().minus(2, ChronoUnit.DAYS));
-        tokenRepository.save(existingToken);
-
-        HttpResponse<String> response3 = sendPostRequest("/api/auth/forgot-password", "{\"email\":\"" + testUser.getEmail() + "\"}");
-        assertEquals(200, response3.statusCode());
         assertEquals(2, tokenRepository.count()); // Count is now 2
     }
 

@@ -50,15 +50,7 @@ public class PasswordResetService {
 
         User user = userOpt.get();
 
-        // Server-side strict limit: One password-reset email request per user per UTC calendar day.
-        Instant startOfUtcDay = java.time.LocalDate.now(java.time.ZoneOffset.UTC)
-                .atStartOfDay(java.time.ZoneOffset.UTC)
-                .toInstant();
 
-        long requestsToday = tokenRepository.countByUserAndCreatedAtAfter(user, startOfUtcDay);
-        if (requestsToday >= 1) {
-            return; // Fail silently to enforce 1-per-day limit and prevent enumeration
-        }
 
         // Generate cryptographically secure random token (32 bytes = 256 bits)
         byte[] tokenBytes = new byte[32];
