@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="lionBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#451A03"/>
+      <stop offset="100%" stop-color="#1C0A00"/>
+    </linearGradient>
+    <linearGradient id="lionMane" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EA580C"/>
+      <stop offset="100%" stop-color="#9A3412"/>
+    </linearGradient>
+    <linearGradient id="lionFace" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047"/>
+      <stop offset="100%" stop-color="#EAB308"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="28" fill="url(#lionBg)"/>
+  <!-- Mane -->
+  <circle cx="60" cy="62" r="44" fill="url(#lionMane)"/>
+  <!-- Ears -->
+  <circle cx="34" cy="38" r="10" fill="url(#lionFace)"/>
+  <circle cx="34" cy="38" r="5.5" fill="#B45309"/>
+  <circle cx="86" cy="38" r="10" fill="url(#lionFace)"/>
+  <circle cx="86" cy="38" r="5.5" fill="#B45309"/>
+  <!-- Face -->
+  <circle cx="60" cy="65" r="30" fill="url(#lionFace)"/>
+  <!-- Snout -->
+  <ellipse cx="60" cy="74" rx="14" ry="10" fill="#FEF9C3"/>
+  <!-- Eyes -->
+  <circle cx="48" cy="58" r="4.5" fill="#1C1917"/>
+  <circle cx="49" cy="56" r="1.5" fill="#FFFFFF"/>
+  <circle cx="72" cy="58" r="4.5" fill="#1C1917"/>
+  <circle cx="71" cy="56" r="1.5" fill="#FFFFFF"/>
+  <!-- Nose & Mouth -->
+  <polygon points="60,74 54,68 66,68" fill="#451A03"/>
+  <path d="M 55 77 Q 60 82 65 77" stroke="#451A03" stroke-width="2" stroke-linecap="round" fill="none"/>
+</svg>

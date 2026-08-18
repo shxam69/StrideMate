@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="dogBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="dogFur" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+    <linearGradient id="dogEars" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#B45309"/>
+      <stop offset="100%" stop-color="#78350F"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="28" fill="url(#dogBg)"/>
+  <!-- Droopy Ears -->
+  <ellipse cx="26" cy="56" rx="14" ry="24" fill="url(#dogEars)" transform="rotate(15 26 56)"/>
+  <ellipse cx="94" cy="56" rx="14" ry="24" fill="url(#dogEars)" transform="rotate(-15 94 56)"/>
+  <!-- Face -->
+  <circle cx="60" cy="65" r="36" fill="url(#dogFur)"/>
+  <!-- Snout Area -->
+  <ellipse cx="60" cy="76" rx="18" ry="14" fill="#FEF3C7"/>
+  <!-- Eyes -->
+  <ellipse cx="44" cy="56" rx="4.5" ry="6" fill="#1E293B"/>
+  <circle cx="45" cy="54" r="2" fill="#FFFFFF"/>
+  <ellipse cx="76" cy="56" rx="4.5" ry="6" fill="#1E293B"/>
+  <circle cx="75" cy="54" r="2" fill="#FFFFFF"/>
+  <!-- Nose -->
+  <ellipse cx="60" cy="72" rx="7" ry="5.5" fill="#1E293B"/>
+  <!-- Tongue & Mouth -->
+  <path d="M 54 78 Q 60 84 66 78" stroke="#1E293B" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M 57 80 C 57 88, 63 88, 63 80 Z" fill="#F43F5E"/>
+</svg>

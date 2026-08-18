@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="pandaBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#142B2B"/>
+      <stop offset="100%" stop-color="#0A1414"/>
+    </linearGradient>
+    <linearGradient id="pandaFur" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E2E8F0"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="28" fill="url(#pandaBg)"/>
+  <!-- Ears -->
+  <circle cx="32" cy="34" r="16" fill="#1E293B"/>
+  <circle cx="32" cy="34" r="9" fill="#0F172A"/>
+  <circle cx="88" cy="34" r="16" fill="#1E293B"/>
+  <circle cx="88" cy="34" r="9" fill="#0F172A"/>
+  <!-- Face -->
+  <circle cx="60" cy="66" r="38" fill="url(#pandaFur)"/>
+  <!-- Eye Patches -->
+  <ellipse cx="44" cy="62" rx="12" ry="15" fill="#1E293B" transform="rotate(-15 44 62)"/>
+  <ellipse cx="76" cy="62" rx="12" ry="15" fill="#1E293B" transform="rotate(15 76 62)"/>
+  <!-- Eyes -->
+  <circle cx="44" cy="60" r="4.5" fill="#FFFFFF"/>
+  <circle cx="45" cy="59" r="2.5" fill="#0F172A"/>
+  <circle cx="46" cy="58" r="1" fill="#FFFFFF"/>
+  <circle cx="76" cy="60" r="4.5" fill="#FFFFFF"/>
+  <circle cx="75" cy="59" r="2.5" fill="#0F172A"/>
+  <circle cx="74" cy="58" r="1" fill="#FFFFFF"/>
+  <!-- Nose & Mouth -->
+  <ellipse cx="60" cy="76" rx="7" ry="5" fill="#1E293B"/>
+  <path d="M 54 84 Q 60 89 66 84" stroke="#1E293B" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+</svg>

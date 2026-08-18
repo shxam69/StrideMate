@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="rabbitBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4C1D95"/>
+      <stop offset="100%" stop-color="#1E1B4B"/>
+    </linearGradient>
+    <linearGradient id="rabbitFur" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#F1F5F9"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="28" fill="url(#rabbitBg)"/>
+  <!-- Tall Ears -->
+  <ellipse cx="42" cy="32" rx="10" ry="26" fill="url(#rabbitFur)" transform="rotate(-10 42 32)"/>
+  <ellipse cx="42" cy="32" rx="5" ry="18" fill="#F472B6" transform="rotate(-10 42 32)"/>
+  <ellipse cx="78" cy="32" rx="10" ry="26" fill="url(#rabbitFur)" transform="rotate(10 78 32)"/>
+  <ellipse cx="78" cy="32" rx="5" ry="18" fill="#F472B6" transform="rotate(10 78 32)"/>
+  <!-- Face -->
+  <circle cx="60" cy="72" r="34" fill="url(#rabbitFur)"/>
+  <!-- Pink Cheeks -->
+  <circle cx="36" cy="75" r="7" fill="#FBCFE8" opacity="0.8"/>
+  <circle cx="84" cy="75" r="7" fill="#FBCFE8" opacity="0.8"/>
+  <!-- Eyes -->
+  <ellipse cx="45" cy="65" rx="4.5" ry="6" fill="#1E293B"/>
+  <circle cx="46" cy="63" r="2" fill="#FFFFFF"/>
+  <ellipse cx="75" cy="65" rx="4.5" ry="6" fill="#1E293B"/>
+  <circle cx="74" cy="63" r="2" fill="#FFFFFF"/>
+  <!-- Nose & Mouth -->
+  <polygon points="60,74 56,70 64,70" fill="#F43F5E"/>
+  <path d="M 54 77 Q 60 82 66 77" stroke="#334155" stroke-width="2" stroke-linecap="round" fill="none"/>
+</svg>

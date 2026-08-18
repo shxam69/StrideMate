@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Activity, LogOut, LayoutDashboard, Trophy, Plus, Menu, X, Sun, Moon, User, History, BarChart3 } from 'lucide-react';
+import { getAvatarUrl } from '../utils/avatar';
 
 const Navbar: React.FC = () => {
     const { user, logout } = useAuth();
@@ -103,11 +104,19 @@ const Navbar: React.FC = () => {
                                 >
                                     <div className="relative">
                                         <div className="w-7 h-7 rounded-lg overflow-hidden bg-[var(--accent)]/20 flex items-center justify-center text-xs font-bold text-[var(--accent)]">
-                                            {user.profilePhoto ? (
-                                                <img src={user.profilePhoto} alt="" className="w-full h-full object-cover" />
-                                            ) : (
-                                                <span>{user.firstName[0]}</span>
-                                            )}
+                                            {getAvatarUrl(user.profilePhoto) ? (
+                                                <img 
+                                                    src={getAvatarUrl(user.profilePhoto)!} 
+                                                    alt="" 
+                                                    className="w-full h-full object-cover" 
+                                                    onError={(e) => {
+                                                        e.currentTarget.style.display = 'none';
+                                                    }}
+                                                />
+                                            ) : null}
+                                            <span className={getAvatarUrl(user.profilePhoto) ? 'hidden' : 'block'}>
+                                                {user.firstName ? user.firstName[0].toUpperCase() : 'U'}
+                                            </span>
                                         </div>
                                         <span 
                                             className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-[var(--bg)] ${user.profileCompleted ? 'bg-emerald-400' : 'bg-amber-400'}`}

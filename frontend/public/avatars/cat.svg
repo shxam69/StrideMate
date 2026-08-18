@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="100%" height="100%">
+  <defs>
+    <linearGradient id="catBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2D124D"/>
+      <stop offset="100%" stop-color="#130824"/>
+    </linearGradient>
+    <linearGradient id="catFur" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A78BFA"/>
+      <stop offset="100%" stop-color="#7C3AED"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="28" fill="url(#catBg)"/>
+  <!-- Ears -->
+  <polygon points="28,22 52,50 20,54" fill="url(#catFur)"/>
+  <polygon points="30,28 46,48 24,50" fill="#F472B6"/>
+  <polygon points="92,22 68,50 100,54" fill="url(#catFur)"/>
+  <polygon points="90,28 74,48 96,50" fill="#F472B6"/>
+  <!-- Face -->
+  <circle cx="60" cy="68" r="36" fill="url(#catFur)"/>
+  <!-- Eyes -->
+  <ellipse cx="44" cy="62" rx="7" ry="9" fill="#FEF08A"/>
+  <ellipse cx="44" cy="62" rx="2.5" ry="7" fill="#1E1B4B"/>
+  <circle cx="43" cy="59" r="1.5" fill="#FFFFFF"/>
+  <ellipse cx="76" cy="62" rx="7" ry="9" fill="#FEF08A"/>
+  <ellipse cx="76" cy="62" rx="2.5" ry="7" fill="#1E1B4B"/>
+  <circle cx="75" cy="59" r="1.5" fill="#FFFFFF"/>
+  <!-- Nose & Mouth -->
+  <polygon points="60,74 56,70 64,70" fill="#F472B6"/>
+  <path d="M 52 79 Q 56 83 60 78 Q 64 83 68 79" stroke="#DDD6FE" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <!-- Whiskers -->
+  <line x1="24" y1="72" x2="38" y2="74" stroke="#DDD6FE" stroke-width="2" stroke-linecap="round"/>
+  <line x1="24" y1="80" x2="38" y2="78" stroke="#DDD6FE" stroke-width="2" stroke-linecap="round"/>
+  <line x1="96" y1="72" x2="82" y2="74" stroke="#DDD6FE" stroke-width="2" stroke-linecap="round"/>
+  <line x1="96" y1="80" x2="82" y2="78" stroke="#DDD6FE" stroke-width="2" stroke-linecap="round"/>
+</svg>

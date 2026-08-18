@@ -2,16 +2,8 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { ShieldCheck, ArrowRight, CheckCircle2, User as UserIcon, Phone, Mail, Sparkles } from 'lucide-react';
-
-const AVATAR_PRESETS = [
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1501196354995-cbb51c65aaea?w=150&auto=format&fit=crop&q=80',
-    'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-];
+import { ShieldCheck, ArrowRight, CheckCircle2, User as UserIcon, Phone, Mail, Sparkles, Check } from 'lucide-react';
+import { ANIMAL_AVATARS } from './Profile';
 
 const RELATIONSHIPS = [
     'Spouse',
@@ -242,23 +234,28 @@ const Onboarding: React.FC = () => {
                                 <span className="text-xs text-white/40 font-normal">Optional</span>
                             </div>
                             
-                            <div className="grid grid-cols-3 sm:grid-cols-6 gap-2.5 sm:gap-3">
-                                {AVATAR_PRESETS.map((url, idx) => {
-                                    const isSelected = profilePhoto === url && !customPhotoUrl;
+                            <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 sm:gap-2.5">
+                                {ANIMAL_AVATARS.map((animal) => {
+                                    const isSelected = profilePhoto === animal.path && !customPhotoUrl;
                                     return (
                                         <button
                                             type="button"
-                                            key={idx}
+                                            key={animal.id}
                                             onClick={() => {
-                                                setProfilePhoto(url);
+                                                setProfilePhoto(animal.path);
                                                 setCustomPhotoUrl('');
                                             }}
-                                            className={`relative aspect-square rounded-2xl overflow-hidden border-2 transition-all duration-200 ${isSelected ? 'border-[var(--accent)] ring-2 ring-[var(--accent)]/50 scale-105 shadow-[0_0_12px_var(--glow-purple)]' : 'border-white/10 hover:border-white/30 opacity-70 hover:opacity-100'}`}
+                                            className={`relative aspect-square rounded-2xl overflow-hidden border-2 transition-all p-1 flex flex-col items-center justify-center ${
+                                                isSelected
+                                                    ? 'border-[var(--accent)] ring-2 ring-[var(--accent)]/50 scale-105 bg-[var(--accent)]/20 shadow-[0_0_12px_var(--glow-purple)]'
+                                                    : 'border-white/10 hover:border-white/30 bg-white/5 opacity-70 hover:opacity-100 hover:scale-105'
+                                            }`}
+                                            title={animal.name}
                                         >
-                                            <img src={url} alt={`Avatar ${idx + 1}`} className="w-full h-full object-cover" />
+                                            <img src={animal.path} alt={animal.name} className="w-full h-full object-contain pointer-events-none" />
                                             {isSelected && (
-                                                <div className="absolute inset-0 bg-[var(--accent)]/20 flex items-center justify-center">
-                                                    <CheckCircle2 className="w-4 h-4 text-white drop-shadow" />
+                                                <div className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-[var(--accent)] text-white flex items-center justify-center shadow-md">
+                                                    <Check className="w-2 h-2 stroke-[3]" />
                                                 </div>
                                             )}
                                         </button>

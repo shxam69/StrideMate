@@ -168,4 +168,118 @@ public class UserControllerTest {
         UserDto dto = objectMapper.readValue(getResponse.body(), UserDto.class);
         assertTrue(dto.isProfileCompleted());
     }
+
+    @Test
+    void testUploadAvatar_ValidPng_ReturnsUpdatedProfileAndServesFile() throws Exception {
+        String boundary = "Boundary-" + UUID.randomUUID();
+        byte[] fakePngBytes = new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D};
+
+        StringBuilder bodyStart = new StringBuilder();
+        bodyStart.append("--").append(boundary).append("\r\n");
+        bodyStart.append("Content-Disposition: form-data; name=\"file\"; filename=\"avatar.png\"\r\n");
+        bodyStart.append("Content-Type: image/png\r\n\r\n");
+
+        byte[] startBytes = bodyStart.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] endBytes = ("\r\n--" + boundary + "--\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+
+        byte[] multipartBody = new byte[startBytes.length + fakePngBytes.length + endBytes.length];
+        System.arraycopy(startBytes, 0, multipartBody, 0, startBytes.length);
+        System.arraycopy(fakePngBytes, 0, multipartBody, startBytes.length, fakePngBytes.length);
+        System.arraycopy(endBytes, 0, multipartBody, startBytes.length + fakePngBytes.length, endBytes.length);
+
+        HttpRequest uploadReq = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + "/api/users/me/avatar"))
+                .header("Authorization", "Bearer " + jwtToken)
+                .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                .POST(HttpRequest.BodyPublishers.ofByteArray(multipartBody))
+                .build();
+
+        HttpResponse<String> uploadRes = httpClient.send(uploadReq, HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, uploadRes.statusCode(), "Upload failed: " + uploadRes.body());
+
+        UserDto uploadedDto = objectMapper.readValue(uploadRes.body(), UserDto.class);
+        assertNotNull(uploadedDto.getProfilePhoto());
+        assertTrue(uploadedDto.getProfilePhoto().startsWith("/api/users/avatar/"));
+
+        // Now fetch the avatar file publicly
+        HttpRequest getAvatarReq = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + uploadedDto.getProfilePhoto()))
+                .GET()
+                .build();
+
+        HttpResponse<byte[]> avatarRes = httpClient.send(getAvatarReq, HttpResponse.BodyHandlers.ofByteArray());
+        assertEquals(200, avatarRes.statusCode());
+        assertTrue(avatarRes.headers().firstValue("Content-Type").orElse("").contains("image"));
+    }
+
+    @Test
+    void testUploadAvatar_InvalidFileType_Returns400() throws Exception {
+        String boundary = "Boundary-" + UUID.randomUUID();
+        byte[] scriptBytes = "echo hello".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+
+        StringBuilder bodyStart = new StringBuilder();
+        bodyStart.append("--").append(boundary).append("\r\n");
+        bodyStart.append("Content-Disposition: form-data; name=\"file\"; filename=\"script.sh\"\r\n");
+        bodyStart.append("Content-Type: text/plain\r\n\r\n");
+
+        byte[] startBytes = bodyStart.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] endBytes = ("\r\n--" + boundary + "--\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+
+        byte[] multipartBody = new byte[startBytes.length + scriptBytes.length + endBytes.length];
+        System.arraycopy(startBytes, 0, multipartBody, 0, startBytes.length);
+        System.arraycopy(scriptBytes, 0, multipartBody, startBytes.length, scriptBytes.length);
+        System.arraycopy(endBytes, 0, multipartBody, startBytes.length + scriptBytes.length, endBytes.length);
+
+        HttpRequest uploadReq = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + "/api/users/me/avatar"))
+                .header("Authorization", "Bearer " + jwtToken)
+                .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                .POST(HttpRequest.BodyPublishers.ofByteArray(multipartBody))
+                .build();
+
+        HttpResponse<String> uploadRes = httpClient.send(uploadReq, HttpResponse.BodyHandlers.ofString());
+        assertEquals(400, uploadRes.statusCode());
+    }
+
+    @Test
+    void testGetAvatar_NonExistentFile_Returns404() throws Exception {
+        HttpRequest getAvatarReq = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + "/api/users/avatar/non-existent-avatar.png"))
+                .GET()
+                .build();
+
+        HttpResponse<String> response = httpClient.send(getAvatarReq, HttpResponse.BodyHandlers.ofString());
+        assertEquals(404, response.statusCode());
+    }
+
+    @Test
+    void testUploadAvatar_OversizedFile_Returns400() throws Exception {
+        String boundary = "Boundary-" + UUID.randomUUID();
+        // 6MB byte array
+        byte[] oversizedBytes = new byte[6 * 1024 * 1024];
+
+        StringBuilder bodyStart = new StringBuilder();
+        bodyStart.append("--").append(boundary).append("\r\n");
+        bodyStart.append("Content-Disposition: form-data; name=\"file\"; filename=\"large.png\"\r\n");
+        bodyStart.append("Content-Type: image/png\r\n\r\n");
+
+        byte[] startBytes = bodyStart.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] endBytes = ("\r\n--" + boundary + "--\r\n").getBytes(java.nio.charset.StandardCharsets.UTF_8);
+
+        byte[] multipartBody = new byte[startBytes.length + oversizedBytes.length + endBytes.length];
+        System.arraycopy(startBytes, 0, multipartBody, 0, startBytes.length);
+        System.arraycopy(oversizedBytes, 0, multipartBody, startBytes.length, oversizedBytes.length);
+        System.arraycopy(endBytes, 0, multipartBody, startBytes.length + oversizedBytes.length, endBytes.length);
+
+        HttpRequest uploadReq = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:" + port + "/api/users/me/avatar"))
+                .header("Authorization", "Bearer " + jwtToken)
+                .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                .POST(HttpRequest.BodyPublishers.ofByteArray(multipartBody))
+                .build();
+
+        HttpResponse<String> uploadRes = httpClient.send(uploadReq, HttpResponse.BodyHandlers.ofString());
+        assertEquals(400, uploadRes.statusCode());
+    }
 }
+

@@ -6,19 +6,26 @@ import com.stridemate.api.user.entity.User;
 import com.stridemate.api.user.repository.EmergencyContactRepository;
 import com.stridemate.api.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
     private final EmergencyContactRepository emergencyContactRepository;
+    private final AvatarStorageService avatarStorageService;
 
     @Autowired
-    public UserService(UserRepository userRepository, EmergencyContactRepository emergencyContactRepository) {
+    public UserService(
+            UserRepository userRepository,
+            EmergencyContactRepository emergencyContactRepository,
+            AvatarStorageService avatarStorageService) {
         this.userRepository = userRepository;
         this.emergencyContactRepository = emergencyContactRepository;
+        this.avatarStorageService = avatarStorageService;
     }
 
     @Transactional(readOnly = true)
@@ -45,6 +52,23 @@ public class UserService {
 
         User saved = userRepository.save(user);
         return toDto(saved);
+    }
+
+    @Transactional
+    public UserDto uploadAvatar(String email, MultipartFile file) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found: " + email));
+
+        String filename = avatarStorageService.store(file, user.getId());
+        String avatarUrl = "/api/users/avatar/" + filename;
+        user.setProfilePhoto(avatarUrl);
+
+        User saved = userRepository.save(user);
+        return toDto(saved);
+    }
+
+    public Resource loadAvatar(String filename) {
+        return avatarStorageService.loadAsResource(filename);
     }
 
     public UserDto toDto(User user) {
