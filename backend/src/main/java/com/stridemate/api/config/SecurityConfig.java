@@ -51,7 +51,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/leaderboard").permitAll()
+                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/leaderboard", "/api/leaderboard/**").permitAll()
                         .requestMatchers("/api/auth/request-otp", "/api/auth/verify-otp", "/api/auth/resend-otp").permitAll()
                         .requestMatchers("/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
                         .requestMatchers("/api/health").permitAll()

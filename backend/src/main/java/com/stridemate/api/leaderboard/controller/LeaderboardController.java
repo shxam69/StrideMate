@@ -21,7 +21,17 @@ public class LeaderboardController {
     }
 
     @GetMapping
-    public List<LeaderboardEntryDto> getLeaderboard() {
+    public List<LeaderboardEntryDto> getGlobalLeaderboard() {
         return leaderboardService.getGlobalLeaderboard();
+    }
+
+    @GetMapping("/weekly")
+    public List<LeaderboardEntryDto> getWeeklyLeaderboard() {
+        return leaderboardService.getWeeklyLeaderboard();
+    }
+
+    @GetMapping("/monthly")
+    public List<LeaderboardEntryDto> getMonthlyLeaderboard() {
+        return leaderboardService.getMonthlyLeaderboard();
     }
 }

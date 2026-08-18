@@ -22,6 +22,8 @@ import {
     AlertTriangle,
     Lock
 } from 'lucide-react';
+import ActivityCelebrationModal from '../components/ActivityCelebrationModal';
+import type { ActivitySaveResult } from '../types';
 
 const formatSeconds = (sec: number): string => {
     const hours = Math.floor(sec / 3600);
@@ -59,7 +61,7 @@ const AddActivity: React.FC = () => {
     // Saving states
     const [isSaving, setIsSaving] = useState(false);
     const [saveError, setSaveError] = useState<string | null>(null);
-    const [savedResponse, setSavedResponse] = useState<any | null>(null);
+    const [savedResponse, setSavedResponse] = useState<ActivitySaveResult | null>(null);
 
     // Manual Timer interval handler
     useEffect(() => {
@@ -98,10 +100,7 @@ const AddActivity: React.FC = () => {
 
             const res = await api.post('/activities', payload);
             setSavedResponse(res.data);
-
-            setTimeout(() => {
-                navigate('/dashboard');
-            }, 1800);
+            setIsSaving(false);
         } catch (err: any) {
             console.error('Failed to save activity', err);
             setSaveError(err.response?.data?.message || 'Failed to save activity. Please try again.');
@@ -127,10 +126,7 @@ const AddActivity: React.FC = () => {
 
             const res = await api.post('/activities', payload);
             setSavedResponse(res.data);
-
-            setTimeout(() => {
-                navigate('/dashboard');
-            }, 1800);
+            setIsSaving(false);
         } catch (err: any) {
             console.error('Failed to save manual timer activity', err);
             setSaveError(err.response?.data?.message || 'Failed to save workout. Please try again.');
@@ -605,7 +601,7 @@ const AddActivity: React.FC = () => {
                                         </div>
                                         <h2 className="text-2xl sm:text-3xl font-extrabold text-white">Activity Saved!</h2>
                                         <p className="text-sm text-emerald-400 font-semibold">
-                                            +{savedResponse.points} points added to your score!
+                                            +{savedResponse.pointsEarned} points added to your score!
                                         </p>
                                         <p className="text-xs text-white/50">Redirecting to dashboard...</p>
                                     </div>
@@ -896,6 +892,14 @@ const AddActivity: React.FC = () => {
                             )}
                         </div>
                     </div>
+                )}
+
+                {/* Duolingo-style Celebration Progression Modal */}
+                {savedResponse && (
+                    <ActivityCelebrationModal
+                        result={savedResponse}
+                        onClose={() => navigate('/dashboard')}
+                    />
                 )}
             </main>
         </div>

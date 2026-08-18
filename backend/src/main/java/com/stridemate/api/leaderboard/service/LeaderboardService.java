@@ -7,13 +7,17 @@ import com.stridemate.api.leaderboard.dto.Trend;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class LeaderboardService {
@@ -27,10 +31,43 @@ public class LeaderboardService {
 
     public List<LeaderboardEntryDto> getGlobalLeaderboard() {
         List<UserPointsProjection> currentRanking = activityRepository.getGlobalLeaderboard();
-        
         Instant cutoff = Instant.now().minus(24, ChronoUnit.HOURS);
         List<UserPointsProjection> previousRanking = activityRepository.getLeaderboardBefore(cutoff);
+        return mapLeaderboard(currentRanking, previousRanking);
+    }
 
+    public List<LeaderboardEntryDto> getWeeklyLeaderboard() {
+        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+        LocalDate monday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        Instant since = monday.atStartOfDay().toInstant(ZoneOffset.UTC);
+
+        List<UserPointsProjection> currentRanking = activityRepository.getLeaderboardSince(since);
+
+        // Previous 24h cutoff for trend comparison
+        Instant prevCutoff = Instant.now().minus(24, ChronoUnit.HOURS);
+        List<UserPointsProjection> previousRanking = prevCutoff.isAfter(since)
+                ? activityRepository.getLeaderboardBetween(since, prevCutoff)
+                : new ArrayList<>();
+
+        return mapLeaderboard(currentRanking, previousRanking);
+    }
+
+    public List<LeaderboardEntryDto> getMonthlyLeaderboard() {
+        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+        LocalDate firstOfMonth = today.withDayOfMonth(1);
+        Instant since = firstOfMonth.atStartOfDay().toInstant(ZoneOffset.UTC);
+
+        List<UserPointsProjection> currentRanking = activityRepository.getLeaderboardSince(since);
+
+        Instant prevCutoff = Instant.now().minus(24, ChronoUnit.HOURS);
+        List<UserPointsProjection> previousRanking = prevCutoff.isAfter(since)
+                ? activityRepository.getLeaderboardBetween(since, prevCutoff)
+                : new ArrayList<>();
+
+        return mapLeaderboard(currentRanking, previousRanking);
+    }
+
+    private List<LeaderboardEntryDto> mapLeaderboard(List<UserPointsProjection> currentRanking, List<UserPointsProjection> previousRanking) {
         Map<UUID, Integer> previousRanks = new HashMap<>();
         int rank = 1;
         for (UserPointsProjection proj : previousRanking) {
@@ -57,7 +94,6 @@ public class LeaderboardService {
                     entry.setTrend(Trend.FLAT);
                 }
             } else {
-                // If they weren't in the previous ranking, they are essentially trending UP from unranked
                 entry.setTrend(Trend.UP);
             }
 

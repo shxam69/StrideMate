@@ -11,6 +11,8 @@ import ResetPassword from './pages/ResetPassword';
 import Onboarding from './pages/Onboarding';
 import Profile from './pages/Profile';
 import AddActivity from './pages/AddActivity';
+import ActivityHistory from './pages/ActivityHistory';
+import Analytics from './pages/Analytics';
 import AuthLayout from './layouts/AuthLayout';
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -73,6 +75,8 @@ const App: React.FC = () => {
 
                         {/* Core Protected App Routes */}
                         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                        <Route path="/history" element={<ProtectedRoute><ActivityHistory /></ProtectedRoute>} />
+                        <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
                         <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
                         <Route path="/add-activity" element={<ProtectedRoute><AddActivity /></ProtectedRoute>} />
                         <Route path="/" element={<Navigate to="/dashboard" />} />

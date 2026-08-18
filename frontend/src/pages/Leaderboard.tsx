@@ -2,27 +2,28 @@ import React, { useEffect, useState } from 'react';
 import type { LeaderboardEntry } from '../types';
 import api from '../services/api';
 import Navbar from '../components/Navbar';
-import { Trophy, TrendingUp, TrendingDown, Minus, Circle } from 'lucide-react';
+import { Trophy, TrendingUp, TrendingDown, Minus, Circle, Calendar, Globe } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+type TimeFrame = 'GLOBAL' | 'WEEKLY' | 'MONTHLY';
+
 const Leaderboard: React.FC = () => {
+    const [timeframe, setTimeframe] = useState<TimeFrame>('GLOBAL');
     const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const { user } = useAuth();
 
     useEffect(() => {
-        api.get('/leaderboard')
-            .then(res => setEntries(res.data))
-            .finally(() => setLoading(false));
-    }, []);
+        setLoading(true);
+        let endpoint = '/leaderboard';
+        if (timeframe === 'WEEKLY') endpoint = '/leaderboard/weekly';
+        if (timeframe === 'MONTHLY') endpoint = '/leaderboard/monthly';
 
-    if (loading) {
-        return (
-            <div className="min-h-screen flex justify-center items-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent)]"></div>
-            </div>
-        );
-    }
+        api.get(endpoint)
+            .then(res => setEntries(res.data))
+            .catch(err => console.error('Leaderboard error', err))
+            .finally(() => setLoading(false));
+    }, [timeframe]);
 
     const renderTrendIcon = (trend: string) => {
         switch (trend) {
@@ -55,20 +56,65 @@ const Leaderboard: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen pb-16">
             <Navbar />
-            <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 relative z-10">
-                <div className="flex items-center space-x-3 md:space-x-4 mb-8 md:mb-12">
-                    <div className="p-3 bg-[var(--accent)]/10 border border-[var(--accent)]/20 rounded-2xl shadow-[0_0_15px_var(--glow-purple)]">
-                        <Trophy className="w-6 h-6 md:w-8 md:h-8 text-[var(--accent)]" />
+            <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 relative z-10 space-y-6">
+                {/* Header & Tabs */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center space-x-3 md:space-x-4">
+                        <div className="p-3 bg-[var(--accent)]/10 border border-[var(--accent)]/20 rounded-2xl shadow-[0_0_15px_var(--glow-purple)]">
+                            <Trophy className="w-6 h-6 md:w-8 md:h-8 text-[var(--accent)]" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl md:text-4xl font-bold text-[var(--text)] tracking-tight">ATHLETE RANKINGS</h1>
+                            <p className="text-sm text-[var(--text-muted)] mt-0.5">Competitive standings across global and time-framed tiers.</p>
+                        </div>
                     </div>
-                    <div>
-                        <h1 className="text-2xl md:text-4xl font-bold text-[var(--text)] tracking-tight">GLOBAL RANKINGS</h1>
-                        <p className="text-sm md:text-base text-[var(--text-muted)] mt-1">See how you stack up against the competition.</p>
+
+                    {/* Time-frame selector tabs */}
+                    <div className="flex items-center space-x-1.5 p-1 rounded-2xl bg-white/5 border border-white/10 self-start">
+                        <button
+                            onClick={() => setTimeframe('GLOBAL')}
+                            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                timeframe === 'GLOBAL'
+                                    ? 'bg-[var(--accent)] text-white shadow-[0_0_10px_var(--glow-purple)]'
+                                    : 'text-white/60 hover:text-white'
+                            }`}
+                        >
+                            <Globe className="w-3.5 h-3.5" />
+                            <span>Global</span>
+                        </button>
+                        <button
+                            onClick={() => setTimeframe('WEEKLY')}
+                            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                timeframe === 'WEEKLY'
+                                    ? 'bg-[var(--accent)] text-white shadow-[0_0_10px_var(--glow-purple)]'
+                                    : 'text-white/60 hover:text-white'
+                            }`}
+                        >
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span>Weekly</span>
+                        </button>
+                        <button
+                            onClick={() => setTimeframe('MONTHLY')}
+                            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                                timeframe === 'MONTHLY'
+                                    ? 'bg-[var(--accent)] text-white shadow-[0_0_10px_var(--glow-purple)]'
+                                    : 'text-white/60 hover:text-white'
+                            }`}
+                        >
+                            <Calendar className="w-3.5 h-3.5" />
+                            <span>Monthly</span>
+                        </button>
                     </div>
                 </div>
 
-                {entries.length > 0 ? (
+                {loading ? (
+                    <div className="text-center py-20">
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--accent)] mx-auto mb-3"></div>
+                        <p className="text-xs text-white/50">Calculating {timeframe.toLowerCase()} rankings...</p>
+                    </div>
+                ) : entries.length > 0 ? (
                     <>
                         {/* Podium Section */}
                         <div className="flex items-end justify-center gap-2 md:gap-6 mb-8 md:mb-12 h-56 md:h-64 mt-12 md:mt-10">
@@ -79,7 +125,7 @@ const Leaderboard: React.FC = () => {
                                         <div className="text-center mb-4 absolute -top-16 w-full">
                                             <Trophy className={`w-6 h-6 md:w-8 md:h-8 mx-auto mb-1 md:mb-2 ${getPodiumMedal(entry.rank)}`} />
                                             <p className="font-bold text-[var(--text)] text-xs md:text-base truncate px-1 md:px-2">{entry.firstName}</p>
-                                            <p className="text-[var(--accent)] font-bold text-xs md:text-sm">{entry.totalPoints.toLocaleString()}</p>
+                                            <p className="text-[var(--accent)] font-bold text-xs md:text-sm">{entry.totalPoints.toLocaleString()} pts</p>
                                         </div>
                                         
                                         <div className={`w-full ${getPodiumHeight(entry.rank)} glass-panel rounded-t-xl border-b-0 flex items-start justify-center pt-2 md:pt-4 relative overflow-hidden transition-all duration-300 ${isMe ? 'bg-[var(--accent)]/20 border-[var(--accent)]/50 shadow-[0_-10px_30px_rgba(99,102,241,0.2)]' : ''}`}>
@@ -153,8 +199,8 @@ const Leaderboard: React.FC = () => {
                 ) : (
                     <div className="glass-card p-12 text-center flex flex-col items-center">
                         <Trophy className="w-16 h-16 text-[var(--text-muted)] mb-4 opacity-50" />
-                        <h3 className="text-xl font-bold text-[var(--text)] mb-2">No rankings yet</h3>
-                        <p className="text-[var(--text-muted)]">Be the first to log an activity and take the top spot!</p>
+                        <h3 className="text-xl font-bold text-[var(--text)] mb-2">No {timeframe.toLowerCase()} rankings yet</h3>
+                        <p className="text-[var(--text-muted)]">Be the first to log a session and claim rank #1 in this timeframe!</p>
                     </div>
                 )}
             </main>

@@ -6,14 +6,22 @@ import com.stridemate.api.activity.entity.Activity;
 import com.stridemate.api.activity.entity.SportType;
 import com.stridemate.api.activity.repository.ActivityRepository;
 import com.stridemate.api.exception.InvalidActivityException;
+import com.stridemate.api.exception.ResourceNotFoundException;
+import com.stridemate.api.gamification.dto.ActivitySaveResultDto;
+import com.stridemate.api.gamification.service.GamificationService;
 import com.stridemate.api.scoring.ScoringService;
 import com.stridemate.api.user.entity.User;
 import com.stridemate.api.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class ActivityService {
@@ -21,18 +29,26 @@ public class ActivityService {
     private final ActivityRepository activityRepository;
     private final UserRepository userRepository;
     private final ScoringService scoringService;
+    private final GamificationService gamificationService;
 
     @Autowired
-    public ActivityService(ActivityRepository activityRepository, UserRepository userRepository, ScoringService scoringService) {
+    public ActivityService(
+            ActivityRepository activityRepository,
+            UserRepository userRepository,
+            ScoringService scoringService,
+            GamificationService gamificationService) {
         this.activityRepository = activityRepository;
         this.userRepository = userRepository;
         this.scoringService = scoringService;
+        this.gamificationService = gamificationService;
     }
 
-    public ActivityResponse createActivity(ActivityRequest request, String email) {
+    @Transactional
+    public ActivitySaveResultDto createActivity(ActivityRequest request, String email) {
         validateActivityRequest(request);
 
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
 
         Activity activity = new Activity();
         activity.setUser(user);
@@ -72,7 +88,49 @@ public class ActivityService {
         activity.setCalories(calories);
 
         Activity savedActivity = activityRepository.save(activity);
-        return toResponse(savedActivity);
+
+        // Atomic Gamification Processing
+        GamificationService.ProgressionResult prog = gamificationService.processActivityGamification(user, savedActivity);
+
+        ActivitySaveResultDto result = new ActivitySaveResultDto();
+        result.setActivity(toResponse(savedActivity));
+        result.setPointsEarned(prog.pointsEarned);
+        result.setXpEarned(prog.xpEarned);
+        result.setCurrentXp(prog.currentXp);
+        result.setNextLevelXp(prog.nextLevelXp);
+        result.setTotalXp(prog.totalXp);
+        result.setLevel(prog.level);
+        result.setPreviousLevel(prog.previousLevel);
+        result.setLevelUp(prog.levelUp);
+        result.setCurrentStreak(prog.currentStreak);
+        result.setLongestStreak(prog.longestStreak);
+        result.setStreakMaintained(prog.isStreakMaintained);
+        result.setCompletedQuests(prog.completedQuests);
+        result.setUnlockedAchievements(prog.unlockedAchievements);
+
+        return result;
+    }
+
+    @Transactional(readOnly = true)
+    public List<ActivityResponse> getUserActivities(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        List<Activity> activities = activityRepository.findByUserIdOrderByRecordedAtDesc(user.getId());
+        return activities.stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public ActivityResponse getActivityById(UUID activityId, String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Activity activity = activityRepository.findById(activityId)
+                .orElseThrow(() -> new ResourceNotFoundException("Activity not found with id: " + activityId));
+
+        if (!activity.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You do not have permission to view this activity.");
+        }
+
+        return toResponse(activity);
     }
 
     private SportType resolveSportType(ActivityRequest request) {
@@ -176,7 +234,7 @@ public class ActivityService {
             throw new InvalidActivityException("Sum of segment durations (" + sumSegments + "s) exceeds total duration (" + totalSec + "s)");
         }
 
-        // Impossibility speed check: prevent GPS teleportation / crazy numbers (> 70 km/h for running/walking, > 100 km/h for cycling)
+        // Impossibility speed check: prevent GPS teleportation / crazy numbers (> 65 km/h for running/walking, > 100 km/h for cycling)
         if (request.getDistanceKm() != null && request.getDistanceKm().compareTo(BigDecimal.ZERO) > 0) {
             int effectiveSec = totalSec > 0 ? totalSec : sumSegments;
             if (effectiveSec > 0) {
@@ -189,7 +247,7 @@ public class ActivityService {
         }
     }
 
-    private ActivityResponse toResponse(Activity activity) {
+    public ActivityResponse toResponse(Activity activity) {
         ActivityResponse response = new ActivityResponse();
         response.setActivityId(activity.getId());
         response.setUserId(activity.getUser().getId());
