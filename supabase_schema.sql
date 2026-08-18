@@ -181,3 +181,28 @@ CREATE TABLE IF NOT EXISTS public.password_reset_tokens (
 
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_token_hash ON public.password_reset_tokens(token_hash);
 CREATE INDEX IF NOT EXISTS idx_password_reset_tokens_user_id ON public.password_reset_tokens(user_id);
+
+-- ==============================================================================
+-- SECTION E: SAFETY & EMERGENCY SOS EVENTS (PHASE 7)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.emergency_events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
+    accuracy_meters DOUBLE PRECISION,
+    activity_id UUID REFERENCES public.activities(id) ON DELETE SET NULL,
+    triggered_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    status VARCHAR(50) NOT NULL DEFAULT 'TRIGGERED',
+    sms_status VARCHAR(50),
+    whatsapp_status VARCHAR(50),
+    call_status VARCHAR(50),
+    message TEXT,
+    resolved_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_emergency_events_user_id ON public.emergency_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_emergency_events_triggered_at ON public.emergency_events(triggered_at DESC);
+CREATE INDEX IF NOT EXISTS idx_emergency_events_status ON public.emergency_events(status);
+

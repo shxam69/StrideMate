@@ -13,6 +13,8 @@ import Profile from './pages/Profile';
 import AddActivity from './pages/AddActivity';
 import ActivityHistory from './pages/ActivityHistory';
 import Analytics from './pages/Analytics';
+import Environment from './pages/Environment';
+import Safety from './pages/Safety';
 import AuthLayout from './layouts/AuthLayout';
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -72,9 +74,11 @@ const App: React.FC = () => {
 
                         {/* Profile & Settings (Accessible anytime when logged in) */}
                         <Route path="/profile" element={<ProtectedRoute allowIncomplete={true}><Profile /></ProtectedRoute>} />
+                        <Route path="/safety" element={<ProtectedRoute allowIncomplete={true}><Safety /></ProtectedRoute>} />
 
                         {/* Core Protected App Routes */}
                         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                        <Route path="/environment" element={<ProtectedRoute><Environment /></ProtectedRoute>} />
                         <Route path="/history" element={<ProtectedRoute><ActivityHistory /></ProtectedRoute>} />
                         <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
                         <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />

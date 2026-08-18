@@ -10,7 +10,8 @@ import StreakWidget from '../components/StreakWidget';
 import LevelCard from '../components/LevelCard';
 import DailyQuestsCard from '../components/DailyQuestsCard';
 import DailyEnergyWidget from '../components/DailyEnergyWidget';
-import { Trophy, Activity, Medal, Heart, ArrowRight, Plus, BarChart3 } from 'lucide-react';
+import EnvironmentCard from '../components/EnvironmentCard';
+import { Trophy, Activity, Medal, Heart, ArrowRight, Plus, BarChart3, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Dashboard: React.FC = () => {
@@ -76,7 +77,7 @@ const Dashboard: React.FC = () => {
         <div className="min-h-screen pb-16">
             <Navbar />
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 relative z-10 space-y-8">
-                {/* Greeting & Quick Action */}
+                {/* Greeting & Quick Actions */}
                 <div className="relative flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <h1 className="text-3xl md:text-5xl font-bold text-[var(--text)] tracking-tight mb-2">
@@ -86,6 +87,15 @@ const Dashboard: React.FC = () => {
                     </div>
 
                     <div className="flex items-center space-x-3">
+                        <Link
+                            to="/safety"
+                            className="px-3.5 py-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 hover:bg-rose-500/25 text-xs font-bold flex items-center space-x-1.5 transition-all shadow-[0_0_12px_rgba(244,63,94,0.2)]"
+                            title="Safety & SOS Center"
+                        >
+                            <ShieldAlert className="w-4 h-4 text-rose-400" />
+                            <span>SOS</span>
+                        </Link>
+
                         <Link
                             to="/add-activity"
                             className="auth-submit-btn px-5 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-2 shadow-lg"
@@ -111,6 +121,9 @@ const Dashboard: React.FC = () => {
                         )}
                     </div>
                 </div>
+
+                {/* Phase 6: Environment Intelligence Outdoor Conditions Widget */}
+                <EnvironmentCard />
 
                 {/* Gamification Top Row (Level Card + Streak Widget) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">

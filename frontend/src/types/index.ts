@@ -192,3 +192,89 @@ export interface LeaderboardEntry {
     totalPoints: number;
     trend: 'UP' | 'DOWN' | 'FLAT' | 'NONE';
 }
+
+// Phase 6: Environment Intelligence Types
+export interface LocationInfo {
+    latitude: number;
+    longitude: number;
+}
+
+export interface WeatherInfo {
+    temperatureC: number;
+    feelsLikeC: number;
+    humidityPercent: number;
+    windSpeedKmh: number;
+    precipitationMm: number;
+    weatherCode: number;
+}
+
+export interface AirQualityInfo {
+    aqi: number;
+    pm25: number;
+    pm10: number;
+    dust: number;
+    ozone: number;
+    nitrogenDioxide: number;
+    sulphurDioxide: number;
+    carbonMonoxide: number;
+}
+
+export interface RunningSpot {
+    name: string;
+    latitude: number;
+    longitude: number;
+    distanceKm: number;
+    type: string;
+    osmId?: number;
+    suitabilityScore: number;
+    mapsUrl: string;
+}
+
+export interface EnvironmentResponse {
+    location: LocationInfo;
+    weather: WeatherInfo;
+    airQuality: AirQualityInfo;
+    uvIndex: number;
+    condition: 'EXCELLENT' | 'GOOD' | 'MODERATE' | 'POOR' | 'AVOID';
+    runningScore: number;
+    recommendation: string;
+    nearbySpots: RunningSpot[];
+}
+
+// Phase 7: Safety & SOS Types
+export interface SosRequest {
+    latitude: number;
+    longitude: number;
+    accuracyMeters?: number;
+    activityId?: string | null;
+    clientRequestId?: string;
+}
+
+export interface SosResponse {
+    eventId: string;
+    status: 'SENT' | 'PARTIALLY_SENT' | 'FAILED';
+    locationUrl: string;
+    sms: 'SENT' | 'FAILED' | 'SKIPPED' | 'MOCK_SENT';
+    whatsapp: 'SENT' | 'FAILED' | 'SKIPPED' | 'MOCK_SENT';
+    call: 'SENT' | 'FAILED' | 'SKIPPED' | 'MOCK_SENT';
+    message: string;
+    triggeredAt: string;
+    contactName?: string;
+    contactPhone?: string;
+}
+
+export interface EmergencyEvent {
+    id: string;
+    latitude: number;
+    longitude: number;
+    accuracyMeters?: number;
+    activityId?: string;
+    triggeredAt: string;
+    status: 'TRIGGERED' | 'RESOLVED' | 'FAILED';
+    smsStatus?: string;
+    whatsappStatus?: string;
+    callStatus?: string;
+    message?: string;
+    resolvedAt?: string;
+}
+
