@@ -32,8 +32,8 @@
 ### 4. 🚨 Safety & Emergency SOS System
 - **1.5-Second Hold-to-Confirm:** Prevents accidental triggers with radial visual progress fill.
 - **High-Accuracy GPS Broadcast:** Validates and locks GPS coordinates before dispatching.
-- **SpringEdge Multi-Channel Alerts:** Dispatches emergency SMS to designated primary contacts with live Google Maps coordinates and timestamp.
-- **Truthful Delivery Status:** Strictly distinguishes `REQUESTED`, `ACCEPTED`, `DELIVERED`, `FAILED`, and `UNAVAILABLE` states via webhook delivery callbacks.
+- **Provider-Agnostic Safety Protocol:** Dispatches emergency alerts to designated primary contacts with live Google Maps coordinates and timestamp (runs in safe **MOCK / SIMULATION** mode by default).
+- **Truthful Delivery Status:** Strictly distinguishes `REQUESTED`, `ACCEPTED`, `MOCK_SENT`, `DELIVERED`, `FAILED`, and `UNAVAILABLE` states.
 
 ### 5. 🎨 Design & UI Architecture
 - **Unified StrideLoader:** Smooth SVG polyline pulse loader adapted across all pages.

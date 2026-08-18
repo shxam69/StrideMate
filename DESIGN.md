@@ -1,55 +1,22 @@
 # StrideMate — Software Design Document
 
-**Document Version:** 1.0.0 (Submission Baseline)  
-**Target Platform:** Full-Stack Athlete Tracking, Gamification, Environmental Intelligence & Safety Ecosystem  
-**Backend Framework:** Spring Boot 3.5.0 (Java 21 LTS) & Spring Security (Stateless JWT)  
-**Frontend Framework:** React 18+ (TypeScript, Vite, Tailwind CSS, Leaflet)  
+**Document Version:** 1.0.0 (Submission Baseline)
+**Target Platform:** Full-Stack GPS Athlete Tracking, Gamification, Environmental Intelligence & Safety Ecosystem
+**Backend Framework:** Spring Boot 3.5.0 (Java 21 LTS) & Spring Security (Stateless JWT)
+**Frontend Framework:** React 18+ (TypeScript, Vite, Tailwind CSS, Leaflet)
 **Database:** PostgreSQL (Supabase / In-Memory H2 for Test Isolation)
 
 ---
 
-## 1. Executive Summary
+## Executive Summary
 
-### 1.1 Project Overview
-**StrideMate** is a full-stack, cloud-ready fitness and endurance activity tracking web application. It combines real-time outdoor GPS telemetry, velocity-based activity segmentation, algorithmic metric normalization, a deterministic quadratic gamification engine, live environmental microclimate intelligence, OpenStreetMap-powered smart running venue discovery, interactive GPS route playback, and a safe mock emergency SOS safety protocol.
-
-### 1.2 Purpose & Engineering Goals
-The core engineering objective of StrideMate is to provide an authoritative, transparent, and responsive platform that solves the common pitfalls of fitness applications:
-1. **Server-Authoritative Ingestion & Scoring:** Preventing client-side telemetry manipulation by enforcing strict server-side validation, coordinate bounds checking, and mathematical normalization formulas.
-2. **Deterministic Gamification:** Providing transparent progression mechanics through quadratic level curves ($50 + 50N$ XP delta per level), UTC-consistent daily streak tracking, dynamic daily quests, and non-repeatable milestone achievements.
-3. **Environmental Contextualization:** Correlating athlete workouts with real-time Air Quality Index (AQI), PM2.5, PM10, UV, temperature, and wind data.
-4. **Smart Spatial Discovery:** Leveraging OpenStreetMap Overpass spatial queries to discover nearby parks, running tracks, and trails with traffic-aware running suitability scoring.
-5. **Safety Architecture:** Implementing an emergency SOS workflow featuring a 1.5-second hold-to-confirm interaction, GPS coordinate locking, primary contact resolution, 5-minute idempotency guards, and a provider-agnostic notification architecture operating in safe development mock mode.
-
-### 1.3 Technology Stack
-
-```
-Frontend:
-├── Core: React 18+ with TypeScript (Strict Mode)
-├── Build Tool: Vite 8.x
-├── Styling: Tailwind CSS & Lucide Icons (Vanilla CSS Token System)
-├── Spatial / Maps: Leaflet 1.9+ & React-Leaflet
-├── HTTP Client: Axios 1.7+ with Request/Response Interceptors
-└── State / Routing: React Context API, Custom React Hooks, React Router DOM v6
-
-Backend:
-├── Framework: Spring Boot 3.5.0 (Java 21 LTS)
-├── Security: Spring Security 6.x (Stateless SessionCreationPolicy, BCrypt, JJWT 0.12.x)
-├── Data Access: Spring Data JPA & Hibernate ORM
-├── Persistence: PostgreSQL (Supabase) & In-Memory H2 (Unit / Integration Tests)
-├── JSON Serialization: Jackson with JavaTimeModule
-└── Quality Assurance: JUnit 5, Spring Boot Test, MockRestServiceServer, Mockito
-
-Database:
-├── Schema Engine: PostgreSQL 15+ (Supabase)
-└── Migration Strategy: Idempotent SQL Scripts (Phases 3–10) with IF NOT EXISTS DDL
-```
+**StrideMate** is a full-stack endurance and fitness activity tracking platform. It integrates real-time GPS tracking, velocity-based activity segmentation, algorithmic metric normalization, a deterministic quadratic gamification engine, live environmental microclimate intelligence, OpenStreetMap-powered smart running venue discovery, interactive GPS route playback, and a safe mock emergency SOS safety protocol.
 
 ---
 
-## 2. Project Scope — Required Features vs Additional Features
+## Project Scope — Required Features vs Additional Features
 
-### 2.1 Required Features (Evaluation Baseline)
+### Required Assignment Features (Evaluation Baseline)
 The following core requirements from the project specification are fully implemented, server-authoritative, and verified by automated test suites:
 
 1. **User Registration & Validation:** Implemented in `Register.tsx` and `AuthService.java` (`POST /api/auth/register`). Validates first name, last name, RFC-5322 email format, and password complexity rules (min 8 chars, letter, number, special char).
@@ -72,32 +39,53 @@ The following core requirements from the project specification are fully impleme
 
 ---
 
-### 2.2 Additional Features Implemented (Beyond Baseline)
+### Additional StrideMate Features (Implemented Beyond Baseline)
 
-1. **Activity History & Deep Workouts Explorer:** Complete workout log filtering by sport, date, duration, and calories with pagination and route inspection (`ActivityHistory.tsx`).
-2. **Fitness Analytics & Volume Charts:** Time-series charts visualizing weekly activity volume, distance distributions, calorie burn, and sport percentage splits (`Analytics.tsx`).
-3. **Advanced Gamification System:**
-   - **Quadratic Level Progression Curve:** Deterministic curve requiring $50 + 50N$ XP for level $N \to N+1$ (`GamificationService.java`).
-   - **Daily Streaks & 7-Day Consistency Calendar:** Evaluates workouts across UTC calendar days and populates a 7-day consistency ring.
+The following features were implemented beyond the core assignment requirements:
+
+1. **Duolingo-Style Gamification:**
+   - **XP Progression & Levels:** Deterministic quadratic level curve requiring $50 + 50N$ XP for level $N \to N+1$ (`GamificationService.java`).
+   - **Daily Streaks & Consistency Calendar:** Evaluates workouts across UTC calendar days and populates a 7-day consistency ring.
    - **Daily Quests Engine:** Automatically generates 3 personalized quests daily (distance, calorie, point targets) with bonus XP rewards.
-   - **12 Milestone Achievements:** One-time milestone badges (`FIRST_STRIDE`, `STREAK_7`, `MARATHON_DISTANCE`, `CENTURION_100K_STEPS`, etc.).
-   - **Level-Up Celebration Pipeline:** Interactive confetti and badge celebration modal on level advancement.
-4. **Environmental Intelligence Engine:** Real-time AQI, PM2.5, PM10, UV, temperature, and wind metrics with composite Running Suitability Scoring ($0\text{--}100$) (`EnvironmentService.java`).
-5. **Smart Running Map:** OpenStreetMap Overpass spatial queries discovering nearby parks, tracks, and trails within 5 km, integrated with TomTom traffic congestion overlays (`SmartRunningMap.tsx`).
-6. **GPS Breadcrumb Persistence & Route Replay:** High-frequency GPS breadcrumbs (`ActivityRoutePoint`) stored in PostgreSQL, downsampled if $>1000$ points, and replayed via Leaflet with a timeline scrubber ($1\times, 2\times, 5\times$) and Start/Finish markers (`RouteViewer.tsx`).
-7. **Route Privacy Protection:** Automatic start and end point obfuscation during social card sharing to hide athlete residential or workplace coordinates.
-8. **Social Activity Share Cards:** Dynamic share card generator integrating workout stats, map snippet, streak count, and Web Share API / clipboard fallback (`ShareActivityCard.tsx`).
-9. **Custom Profile & Avatar System:** Animal cartoon avatar selector (6 friendly SVGs) and custom image upload supporting secure local disk storage and MIME validation (`Profile.tsx`).
-10. **Unified StrideLoader:** Theme-adaptive pulsing SVG polyline animation utilized across all data-fetching views (`StrideLoader.tsx`).
-11. **Safety & SOS Workflow:** 1.5-second hold-to-confirm trigger, GPS coordinate lock, primary contact resolution, 5-minute idempotency guard, incident logging, and provider-agnostic notification architecture operating in safe mock mode (`Safety.tsx`).
+   - **Achievement System:** 12 milestone achievement badges (`FIRST_STRIDE`, `STREAK_7`, `MARATHON_DISTANCE`, `CENTURION_100K_STEPS`, etc.).
+   - **Celebration Modal:** Interactive level-up and quest completion celebration dialog.
+2. **Activity History & Deep Analytics:**
+   - Complete activity history with multi-criteria filtering by sport, date, duration, and calories (`ActivityHistory.tsx`).
+   - 7-day volume analytics, distance distribution charts, and sport percentage splits (`Analytics.tsx`).
+3. **GPS Route Tracking & Replay:**
+   - Real-time GPS breadcrumb capture with displacement filtering ($\Delta \ge 5$m, accuracy $\le 25$m).
+   - High-frequency coordinate persistence (`ActivityRoutePoint`) with automatic downsampling when coordinates exceed 1,000 points.
+   - Interactive Leaflet route viewer with start (green) and finish (red) markers, animated athlete position, and $1\times/2\times/5\times$ speed multipliers (`RouteViewer.tsx`).
+4. **Privacy-Safe Social Sharing:**
+   - Dynamic branded share cards with workout metrics, map preview, and streak count (`ShareActivityCard.tsx`).
+   - Start and finish route privacy trimming to protect home and workplace coordinates.
+   - Native Web Share API integration with automatic clipboard fallback.
+5. **Smart Running Map:**
+   - OpenStreetMap Overpass spatial queries discovering nearby parks, running tracks, and trails within 5 km (`SmartRunningMap.tsx`).
+   - Live environmental microclimate integration (AQI, PM2.5, PM10, UV, temperature, humidity, wind).
+   - Traffic-aware running suitability score ($0\text{--}100$) and one-click Google Maps navigation.
+6. **Emergency Safety / SOS System:**
+   - Emergency contacts management with primary contact enforcement (`EmergencyContactService.java`).
+   - 1.5-second hold-to-confirm trigger preventing accidental dispatch.
+   - High-accuracy GPS coordinate acquisition and strict coordinate bounds validation.
+   - 5-minute idempotency guard on `clientRequestId` preventing duplicate alerts.
+   - Provider-agnostic architecture operating in safe **MOCK / SIMULATION** mode for evaluation safety.
+7. **Profile & Avatar System:**
+   - Friendly cartoon animal avatar presets (6 SVG choices).
+   - Custom profile image upload supporting secure local disk storage, UUID randomization, and MIME validation.
+   - External avatar URL support with immediate Navbar/Profile synchronization.
+8. **Unified UI / UX System:**
+   - Centralized `StrideLoader` SVG pulse loading animation used across all data views.
+   - Light and dark theme switching with persistent localStorage state.
+   - Fluid mobile-responsive layout and glassmorphic card design.
 
 ---
 
-## 3. Feature Verification Matrix
+## Feature Verification Matrix
 
-| Feature | Scope | Implementation Component | Status | Notes / Verification Evidence |
+| Feature | Category | Implementation Component | Status | Notes / Verification Evidence |
 | :--- | :--- | :--- | :--- | :--- |
-| **User Registration** | `Required` | `Register.tsx`, `AuthService.java` | `WORKING / VERIFIED` | Verified by `AuthControllerTest.java` (Tests 1-8). Validates duplicate email/phone. |
+| **User Registration** | `Required` | `Register.tsx`, `AuthService.java` | `WORKING / VERIFIED` | Verified by `AuthControllerTest.java`. Validates duplicate email/phone. |
 | **Duplicate User Detection**| `Required` | `AuthService.java`, DB unique constraints | `WORKING / VERIFIED` | Verified by `AuthControllerTest.java`. Returns 409 Conflict. |
 | **Activity Ingestion** | `Required` | `AddActivity.tsx`, `ActivityService.java` | `WORKING / VERIFIED` | Verified by `ActivityControllerTest.java` & `RouteAndSafetySprintTest.java`. |
 | **Distance Flooring** | `Required` | `ScoringService.java` | `WORKING / VERIFIED` | Verified by `ScoringServiceTest.java`. Floor math with `BigDecimal`. |
@@ -133,487 +121,457 @@ The following core requirements from the project specification are fully impleme
 
 ---
 
-## 4. SOS / Emergency Safety Status (Safe Submission Mode)
+## SOS / Emergency Safety Status (Safe Evaluation Mode)
 
 > [!IMPORTANT]
-> ### Safe Development & Evaluation Baseline
-> The StrideMate SOS system is engineered as an end-to-end safety workflow and notification provider abstraction. For this project submission, the system is **intentionally configured in `MOCK / SIMULATED DELIVERY` mode** (`NOTIFICATION_PROVIDER_MODE=mock`).
+> ### Safe Evaluation Baseline
+> The StrideMate SOS system is implemented as an end-to-end safety workflow and notification-provider abstraction. For this evaluation submission, the system is **intentionally configured in `MOCK / SIMULATED DELIVERY` mode** (`NOTIFICATION_PROVIDER_MODE=mock`).
 >
-> **Why Real Delivery is Disabled by Default:**
-> - Real SMS dispatch to Indian cellular networks via SpringEdge requires an active enterprise subscription, prepaid SMS credits, and registered DLT (Distributed Ledger Technology) headers/templates per TRAI telecommunications compliance.
-> - Simulating delivery prevents accidental cellular network costs and ensures evaluators can execute the full safety lifecycle without external provider credentials.
+> **Why Real Cellular Dispatch is Disabled by Default:**
+> - Real SMS delivery to Indian mobile networks requires an active enterprise gateway subscription, paid credits, and registered DLT (Distributed Ledger Technology) headers/templates per TRAI telecommunications compliance.
+> - Operating in mock mode allows evaluators to safely test the complete SOS lifecycle without incurring telco charges or needing external provider credentials.
 >
 > **The Complete Workflow Operates End-to-End in Mock Mode:**
-> 1. **Accidental Trigger Prevention:** The athlete must hold the SOS button for **1.5 seconds**, tracked via an animated radial SVG countdown.
+> 1. **Accidental Trigger Prevention:** Athlete holds the SOS button for **1.5 seconds**, tracked via an animated radial countdown.
 > 2. **GPS Coordinate Locking:** Acquires high-accuracy GPS coordinates and validates bounds strictly ($\text{lat} \in [-90, 90]$, $\text{lon} \in [-180, 180]$, no NaN/Infinity).
-> 3. **Primary Contact Resolution:** Resolves the athlete's designated primary emergency contact. Fails with `NO_PRIMARY_CONTACT` if none is configured.
+> 3. **Primary Contact Resolution:** Resolves the athlete's designated primary emergency contact. Fails with `NO_PRIMARY_CONTACT` if missing.
 > 4. **Idempotency Guard:** Checks `clientRequestId` within a 5-minute window; returns the existing incident instantly without creating duplicate records.
-> 5. **Incident Recording:** Persists an `EmergencyEvent` record in PostgreSQL with generated Google Maps link (`https://www.google.com/maps?q={lat},{lon}`).
+> 5. **Incident Recording:** Persists an `EmergencyEvent` in PostgreSQL with generated Google Maps link (`https://www.google.com/maps?q={lat},{lon}`).
 > 6. **Simulated Delivery Result:** Returns `MOCK_SENT` with simulated message SID (`mock-sms-xxx`), updating the UI badge to `SIMULATED DELIVERY (DEV MOCK)`.
-> 7. **Incident History:** The logged emergency event is immediately visible in the athlete's Safety Incident History table.
+> 7. **Incident History:** The logged emergency event is immediately displayed in the Safety Incident History table.
 
 ---
 
-## 5. System Architecture & Data Flow
+## 1. System Architecture & Data Flow
+
+StrideMate is structured as a client-server architecture with a decoupled Single Page Application (SPA) frontend and a stateless RESTful Spring Boot backend.
+
+### 1.1 High-Level Architecture Diagram
 
 ```mermaid
-flowchart LR
-    U[Athlete / Mobile & Desktop Browser]
-    FE[React 18 + TypeScript + Vite SPA]
+flowchart TD
+    USER[Athlete / Browser Client]
+    FRONTEND[React 18 + TypeScript + Vite SPA]
     API[Spring Boot 3.5.0 REST API]
+    AUTH[Spring Security & JWT Filter]
+    ACTIVITY[Activity Service]
+    SCORE[Scoring Service]
+    GAME[Gamification Service]
+    LEADERBOARD[Leaderboard Service]
+    ANALYTICS[Analytics Service]
+    ENV[Environment & Smart Map Service]
+    SAFETY[Safety & SOS Service]
+    DATABASE[(PostgreSQL / Supabase)]
+    MOCK[Mock Notification Provider]
+    EXT1[OpenWeatherMap API]
+    EXT2[OpenStreetMap Overpass API]
+    EXT3[TomTom Traffic API]
 
-    subgraph SecurityLayer ["Security & Authentication Layer"]
-        CORS[CORS Policy Filter]
-        JWT[JwtAuthenticationFilter]
-        SEC[Spring Security RBAC]
-    end
+    USER --> FRONTEND
+    FRONTEND --> API
+    API --> AUTH
+    AUTH --> ACTIVITY
+    AUTH --> SCORE
+    AUTH --> GAME
+    AUTH --> LEADERBOARD
+    AUTH --> ANALYTICS
+    AUTH --> ENV
+    AUTH --> SAFETY
 
-    subgraph CoreServices ["Backend Application Services"]
-        AUTH[AuthService & OtpService]
-        ACT[ActivityService & ScoringService]
-        GAM[GamificationService]
-        ANA[AnalyticsService]
-        LEAD[LeaderboardService]
-        ENV[EnvironmentService & SmartMapService]
-        SAFE[SafetyService & DelegatingProvider]
-    end
-
-    subgraph DataStorage ["Persistence Layer"]
-        DB[(Supabase PostgreSQL)]
-        DISK[(Local Disk /uploads)]
-    end
-
-    subgraph ExternalProviders ["External Services & APIs"]
-        EXT1[OpenWeatherMap API / Microclimate Engine]
-        EXT2[OpenStreetMap Overpass API]
-        EXT3[TomTom Traffic Flow API]
-        EXT4[OpenStreetMap Tile Server]
-        MOCK[MockNotificationProvider (Submission Default)]
-        SE[SpringEdge REST SMS Gateway (Config-Dependent)]
-    end
-
-    U --> FE
-    FE --> API
-    API --> CORS --> JWT --> SEC
-    SEC --> CoreServices
-
-    AUTH --> DB
-    ACT --> DB
-    GAM --> DB
-    ANA --> DB
-    LEAD --> DB
-    SAFE --> DB
-    CoreServices --> DISK
+    ACTIVITY --> DATABASE
+    GAME --> DATABASE
+    LEADERBOARD --> DATABASE
+    ANALYTICS --> DATABASE
+    SAFETY --> DATABASE
 
     ENV --> EXT1
     ENV --> EXT2
     ENV --> EXT3
-    FE --> EXT4
-
-    SAFE --> MOCK
-    SAFE -.->|Optional Real Mode| SE
+    SAFETY --> MOCK
 ```
 
 ---
 
-## 6. Database Schema & Data Model
+### 1.2 User Registration Flow
 
-The PostgreSQL schema is partitioned into modular operational domains with cascading referential integrity.
+```mermaid
+flowchart TD
+    USER[User]
+    REGISTER[Register Page]
+    API[POST /api/auth/register]
+    VALIDATE[Validate Request Payload]
+    DUPLICATE[Check Duplicate Email and Phone]
+    HASH[Hash Password with BCrypt]
+    DB[(PostgreSQL Database)]
+    OTP[Generate and Dispatch OTP]
+    RESPONSE[Return 201 Created]
+
+    USER --> REGISTER
+    REGISTER --> API
+    API --> VALIDATE
+    VALIDATE --> DUPLICATE
+    DUPLICATE --> HASH
+    HASH --> DB
+    DB --> OTP
+    OTP --> RESPONSE
+    RESPONSE --> REGISTER
+```
+
+**Step-by-Step Registration Lifecycle:**
+1. The user inputs their first name, last name, email, password, and phone number on the Register page.
+2. The frontend sends a `POST /api/auth/register` request with the JSON payload.
+3. The backend validates required fields, RFC-5322 email syntax, and password complexity.
+4. The backend checks for duplicate email or phone number in PostgreSQL (`userRepository.existsByEmailIgnoreCase`).
+5. The password is securely hashed using BCrypt (10 salt rounds).
+6. A new user record is persisted in PostgreSQL with `enabled = false` and `email_verified = false`.
+7. A 6-digit OTP is generated, hashed, and dispatched to the user's email.
+8. The backend returns an `HTTP 201 Created` response, and the frontend transitions to `/verify-otp`.
+
+---
+
+### 1.3 Activity Data Ingestion Flow
+
+```mermaid
+flowchart TD
+    USER[Athlete]
+    GPS[Browser Geolocation API]
+    TRACKER[useGeoTracker Hook]
+    FRONTEND[AddActivity Page]
+    API[POST /api/activities]
+    CONTROLLER[ActivityController]
+    SERVICE[ActivityService]
+    SCORE[ScoringService]
+    GAME[GamificationService]
+    ROUTE[Route Point Downsampling]
+    DB[(PostgreSQL Database)]
+    RESPONSE[ActivitySaveResultDto]
+
+    USER --> GPS
+    GPS --> TRACKER
+    TRACKER --> FRONTEND
+    FRONTEND --> API
+    API --> CONTROLLER
+    CONTROLLER --> SERVICE
+    SERVICE --> SCORE
+    SERVICE --> GAME
+    SERVICE --> ROUTE
+    SCORE --> DB
+    GAME --> DB
+    ROUTE --> DB
+    SERVICE --> RESPONSE
+    RESPONSE --> FRONTEND
+```
+
+**Step-by-Step Ingestion Lifecycle:**
+1. The athlete records workout telemetry via live GPS or simulator mode.
+2. `useGeoTracker` captures high-accuracy coordinates ($\Delta \ge 5$m, accuracy $\le 25$m) and classifies velocity gait.
+3. On completion, the frontend dispatches `POST /api/activities` with duration, distance, velocity breakdown, and route breadcrumbs.
+4. `ActivityController` routes the payload to `ActivityService` for input bounds validation.
+5. `ScoringService` computes authoritative points and calories using server-side flooring rules.
+6. `ActivityRoutePointRepository` batch-persists route points (downsampled if $>1000$ points).
+7. `GamificationService` awards XP, computes quadratic level progression, updates UTC streaks, and advances daily quests.
+8. The backend returns an `ActivitySaveResultDto` (`HTTP 200 OK`), triggering the level-up celebration modal on the frontend.
+
+---
+
+## 2. Database Schema & Data Model
+
+The relational data model is managed in PostgreSQL with foreign keys, composite indexes, and `ON DELETE CASCADE` referential integrity.
+
+### 2.1 Entity Relationship Diagram
 
 ```mermaid
 erDiagram
-    USERS ||--o{ ACTIVITIES : logs
+    USERS ||--o{ ACTIVITIES : creates
     USERS ||--|| USER_PROGRESS : achieves
     USERS ||--o{ USER_ACHIEVEMENTS : earns
-    USERS ||--o{ DAILY_QUESTS : assigns
+    USERS ||--o{ DAILY_QUESTS : receives
     USERS ||--o{ EMERGENCY_CONTACTS : designates
     USERS ||--o{ EMERGENCY_EVENTS : triggers
     USERS ||--o{ OTPS : requests
     ACTIVITIES ||--o{ ACTIVITY_ROUTE_POINTS : contains
     ACTIVITIES ||--o| EMERGENCY_EVENTS : associates
-    ACHIEVEMENTS ||--o{ USER_ACHIEVEMENTS : references
-
-    USERS {
-        uuid id PK
-        varchar email UK
-        varchar password_hash
-        varchar first_name
-        varchar last_name
-        varchar phone_number UK
-        varchar role
-        varchar profile_photo
-        boolean email_verified
-        boolean phone_verified
-        boolean enabled
-        timestamp created_at
-        timestamp updated_at
-    }
-
-    ACTIVITIES {
-        uuid id PK
-        uuid user_id FK
-        varchar sport
-        numeric distance_km
-        integer duration_minutes
-        integer duration_seconds
-        integer steps
-        integer points
-        integer calories
-        integer total_duration_seconds
-        integer walking_duration_seconds
-        integer jogging_duration_seconds
-        integer running_duration_seconds
-        integer cycling_duration_seconds
-        timestamp started_at
-        timestamp ended_at
-        timestamp recorded_at
-    }
-
-    ACTIVITY_ROUTE_POINTS {
-        uuid id PK
-        uuid activity_id FK
-        double latitude
-        double longitude
-        double accuracy
-        double speed
-        timestamp recorded_at
-    }
-
-    USER_PROGRESS {
-        uuid id PK
-        uuid user_id FK
-        integer total_xp
-        integer level
-        integer current_streak
-        integer longest_streak
-        date last_activity_date
-        timestamp updated_at
-    }
-
-    ACHIEVEMENTS {
-        uuid id PK
-        varchar code UK
-        varchar name
-        text description
-        varchar icon
-        integer reward_xp
-        varchar requirement_type
-        numeric requirement_value
-    }
-
-    USER_ACHIEVEMENTS {
-        uuid id PK
-        uuid user_id FK
-        uuid achievement_id FK
-        timestamp unlocked_at
-    }
-
-    DAILY_QUESTS {
-        uuid id PK
-        uuid user_id FK
-        varchar quest_type
-        varchar title
-        text description
-        numeric target_value
-        numeric current_value
-        integer reward_xp
-        date quest_date
-        boolean completed
-        timestamp completed_at
-    }
-
-    EMERGENCY_CONTACTS {
-        uuid id PK
-        uuid user_id FK
-        varchar name
-        varchar relationship
-        varchar phone_number
-        boolean is_primary
-        timestamp created_at
-        timestamp updated_at
-    }
-
-    EMERGENCY_EVENTS {
-        uuid id PK
-        uuid user_id FK
-        uuid activity_id FK
-        double latitude
-        double longitude
-        double accuracy_meters
-        varchar status
-        varchar provider
-        varchar sms_status
-        varchar whatsapp_status
-        varchar call_status
-        varchar sms_sid
-        varchar whatsapp_sid
-        varchar call_sid
-        varchar client_request_id
-        text message
-        timestamp triggered_at
-        timestamp resolved_at
-        timestamp created_at
-    }
+    ACHIEVEMENTS ||--o{ USER_ACHIEVEMENTS : awards
 ```
+
+### 2.2 Table Specifications
+
+| Table | Primary Key | Foreign Keys | Key Constraints & Indexes | Cascade Delete Behavior |
+| :--- | :--- | :--- | :--- | :--- |
+| `public.users` | `id` (UUID) | None | `email` UNIQUE, `phone_number` UNIQUE, `idx_users_email` | — |
+| `public.otps` | `id` (UUID) | None | `idx_otps_email`, `idx_otps_created_at` | — |
+| `public.activities` | `id` (UUID) | `user_id` $\to$ `users(id)` | `idx_activities_user_id`, `idx_activities_recorded_at` | `ON DELETE CASCADE` |
+| `public.activity_route_points` | `id` (UUID) | `activity_id` $\to$ `activities(id)` | `idx_route_points_activity_id`, `idx_route_points_recorded_at` | `ON DELETE CASCADE` |
+| `public.user_progress` | `id` (UUID) | `user_id` $\to$ `users(id)` | `user_id` UNIQUE, `idx_user_progress_user_id` | `ON DELETE CASCADE` |
+| `public.achievements` | `id` (UUID) | None | `code` UNIQUE | — |
+| `public.user_achievements` | `id` (UUID) | `user_id`, `achievement_id` | `UNIQUE(user_id, achievement_id)` | `ON DELETE CASCADE` |
+| `public.daily_quests` | `id` (UUID) | `user_id` $\to$ `users(id)` | `UNIQUE(user_id, quest_type, quest_date)` | `ON DELETE CASCADE` |
+| `public.emergency_contacts` | `id` (UUID) | `user_id` $\to$ `users(id)` | `idx_emergency_contacts_user_id` | `ON DELETE CASCADE` |
+| `public.emergency_events` | `id` (UUID) | `user_id` $\to$ `users(id)`, `activity_id` $\to$ `activities(id)` | `idx_emergency_events_user_id`, `idx_emergency_events_sms_sid`, `idx_emergency_events_client_request_id` | `ON DELETE CASCADE` (user), `ON DELETE SET NULL` (activity) |
+
+### 2.3 Duplicate User Detection Strategy
+
+Duplicate user registration is prevented through a two-tier strategy:
+
+1. **Application Pre-Check Layer (`AuthService.java`):**
+   - Normalizes input emails to lowercase trimmed format (`email.trim().toLowerCase()`).
+   - Executes `userRepository.existsByEmailIgnoreCase(email)` before saving.
+   - Executes `userRepository.existsByPhoneNumber(phone)` to prevent duplicate phone registration.
+   - Throws `DuplicateResourceException("Email is already registered.")` mapped to `HTTP 409 Conflict`.
+2. **Database Constraint Layer (`supabase_schema.sql`):**
+   - Enforces unique constraints directly at the database level:
+     ```sql
+     CONSTRAINT uq_users_email UNIQUE (email);
+     CONSTRAINT uq_users_phone UNIQUE (phone_number);
+     ```
+   - Any concurrent race condition that bypasses the application check is caught by the database engine and translated into `HTTP 409 Conflict` via `GlobalExceptionHandler.java`.
 
 ---
 
-## 7. API Specifications
+## 3. API Specifications
 
-### 7.1 Authentication Endpoints
-
-#### `POST /api/auth/register`
-- **Purpose:** Registers a new athlete and sends a 6-digit email OTP.
+### 3.1 User Registration API: `POST /api/auth/register`
+- **Purpose:** Registers a new athlete and dispatches an OTP.
 - **Request Payload:**
   ```json
   {
-    "firstName": "Siddharth",
-    "lastName": "Verma",
-    "email": "siddharth@example.com",
-    "password": "Password123!",
+    "firstName": "Rohan",
+    "lastName": "Mehta",
+    "email": "rohan.mehta@example.com",
+    "password": "SecurePassword123!",
     "phoneNumber": "+919876543210"
   }
   ```
-- **Validation Rules:**
+- **Field Validation Rules:**
   - `firstName`, `lastName`: Required, non-blank, max 50 characters.
-  - `email`: Required, valid email format (case-insensitively checked for uniqueness).
-  - `password`: Required, minimum 8 characters, at least 1 digit, 1 letter, 1 special character.
-  - `phoneNumber`: Required, validated for uniqueness.
+  - `email`: Required, valid RFC-5322 email string.
+  - `password`: Required, minimum 8 characters, at least 1 digit, 1 letter, and 1 special character.
+  - `phoneNumber`: Required valid phone number.
 - **Success Response (201 Created):**
   ```json
   {
-    "email": "siddharth@example.com",
+    "email": "rohan.mehta@example.com",
     "message": "Registration successful. Please verify your OTP sent to email."
   }
   ```
-- **Error Responses:** `400 Bad Request` (Validation errors), `409 Conflict` (Email or phone already registered).
-
-#### `POST /api/auth/verify-otp`
-- **Request:** `{ "email": "siddharth@example.com", "otp": "592814" }`
-- **Response (200 OK):**
-  ```json
-  {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "user": {
-      "id": "e8a9b0c1-2345-6789-abcd-ef0123456789",
-      "email": "siddharth@example.com",
-      "firstName": "Siddharth",
-      "lastName": "Verma",
-      "role": "USER",
-      "profileCompleted": true
-    }
-  }
-  ```
+- **Error Responses:**
+  - `400 Bad Request`: Validation failure (e.g., weak password, malformed email).
+  - `409 Conflict`: Email or phone number already registered.
 
 ---
 
-### 7.2 Activity Ingestion & GPS Route Endpoints
-
-#### `POST /api/activities`
-- **Purpose:** Ingests an activity with telemetry breakdown and GPS route points.
+### 3.2 Activity Data Ingestion API: `POST /api/activities`
+- **Purpose:** Ingests an activity session, computes authoritative points and calories, downsamples route points, and updates gamification progress.
 - **Request Payload:**
   ```json
   {
     "sport": "RUNNING",
-    "distanceKm": 4.50,
-    "durationMinutes": 25,
+    "distanceKm": 5.20,
+    "durationMinutes": 30,
     "durationSeconds": 0,
-    "steps": 5400,
-    "totalDurationSeconds": 1500,
+    "steps": 6200,
+    "totalDurationSeconds": 1800,
     "walkingDurationSeconds": 300,
     "joggingDurationSeconds": 600,
-    "runningDurationSeconds": 600,
+    "runningDurationSeconds": 900,
     "cyclingDurationSeconds": 0,
     "startedAt": "2026-08-18T10:00:00Z",
-    "endedAt": "2026-08-18T10:25:00Z",
+    "endedAt": "2026-08-18T10:30:00Z",
     "routePoints": [
       { "latitude": 12.9716, "longitude": 77.5946, "accuracy": 4.5, "speed": 2.8, "recordedAt": "2026-08-18T10:00:00Z" },
       { "latitude": 12.9725, "longitude": 77.5955, "accuracy": 3.8, "speed": 3.4, "recordedAt": "2026-08-18T10:05:00Z" }
     ]
   }
   ```
-- **Response (200 OK):**
+- **Validation Rules:**
+  - `sport`: Must be one of `RUNNING`, `WALKING`, `CYCLING`, `SWIMMING`, `GYM`, `DAILY_STEPS`.
+  - `distanceKm`: Must be positive if provided.
+  - `durationMinutes` / `totalDurationSeconds`: Must be positive.
+- **Success Response (200 OK):**
   ```json
   {
     "activity": {
-      "activityId": "d1c2b3a4-5678-90ab-cdef-1234567890ab",
+      "activityId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
       "sport": "RUNNING",
-      "distanceKm": 4.50,
-      "points": 425,
-      "calories": 298,
-      "recordedAt": "2026-08-18T10:25:00Z"
+      "distanceKm": 5.20,
+      "points": 500,
+      "calories": 365,
+      "recordedAt": "2026-08-18T10:30:00Z"
     },
-    "pointsEarned": 425,
-    "xpEarned": 425,
-    "currentXp": 950,
-    "totalXp": 1650,
-    "level": 5,
-    "levelUp": false,
-    "currentStreak": 3,
-    "longestStreak": 5,
+    "pointsEarned": 500,
+    "xpEarned": 500,
+    "currentXp": 1250,
+    "totalXp": 2450,
+    "level": 6,
+    "levelUp": true,
+    "currentStreak": 4,
+    "longestStreak": 7,
     "completedQuests": [],
     "unlockedAchievements": []
   }
   ```
-
-#### `GET /api/activities/{id}/route?privacy=true`
-- **Purpose:** Fetches GPS breadcrumb points for Leaflet map playback, with optional start/end privacy trimming.
-- **Response (200 OK):**
-  ```json
-  {
-    "activityId": "d1c2b3a4-5678-90ab-cdef-1234567890ab",
-    "privacyTrimmed": true,
-    "points": [
-      { "latitude": 12.9720, "longitude": 77.5950, "accuracy": 4.0, "speed": 3.1, "recordedAt": "2026-08-18T10:02:00Z" }
-    ]
-  }
-  ```
+- **Error Responses:**
+  - `400 Bad Request`: Non-positive distance or duration.
+  - `401 Unauthorized`: Missing or invalid Bearer JWT token.
 
 ---
 
-### 7.3 Safety & SOS Endpoints
+### 3.3 Supporting Core Endpoints
 
-#### `POST /api/safety/sos`
-- **Purpose:** Initiates emergency alert workflow.
-- **Request Payload:**
-  ```json
-  {
-    "latitude": 12.971598,
-    "longitude": 77.594562,
-    "accuracyMeters": 5.0,
-    "activityId": null,
-    "clientRequestId": "client-sos-key-8899"
-  }
-  ```
-- **Response (200 OK):**
-  ```json
-  {
-    "eventId": "f9e8d7c6-b5a4-3210-9876-543210fedcba",
-    "status": "ACCEPTED",
-    "provider": "MOCK",
-    "locationUrl": "https://www.google.com/maps?q=12.971598,77.594562",
-    "sms": "MOCK_SENT",
-    "whatsapp": "MOCK_SENT",
-    "call": "MOCK_SENT",
-    "smsSid": "mock-sms-f9e8d7c6",
-    "contactName": "Ananya Sharma",
-    "contactPhone": "+919876543210",
-    "triggeredAt": "2026-08-18T10:35:00Z"
-  }
-  ```
-
-#### `GET /api/safety/mode`
-- **Purpose:** Returns current notification mode without exposing API keys.
-- **Response (200 OK):**
-  ```json
-  {
-    "mode": "mock",
-    "isReal": false,
-    "provider": "MOCK"
-  }
-  ```
+| Method | Route | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/dashboard` | Returns athlete stats, current level, progress, 7-day consistency calendar, and recent activities. |
+| `GET` | `/api/leaderboard?timeFrame=ALL_TIME` | Returns ranked athletes by XP (`ALL_TIME`, `WEEKLY`, `MONTHLY`). |
+| `GET` | `/api/activities/{id}/route?privacy=true` | Returns GPS route breadcrumbs with optional start/finish privacy trimming. |
+| `POST`| `/api/safety/sos` | Dispatches emergency SOS workflow in mock mode. |
+| `GET` | `/api/safety/mode` | Returns notification provider mode (`mock` vs `real`) without exposing secrets. |
 
 ---
 
-## 8. Scoring & Normalization Logic
+### 3.4 API Error Handling & Structured Response Schema
+
+Centralized in [`GlobalExceptionHandler.java`](file:///C:/StrideMate/backend/src/main/java/com/stridemate/api/exception/GlobalExceptionHandler.java):
+
+```json
+{
+  "timestamp": "2026-08-18T11:15:30Z",
+  "status": 400,
+  "error": "Bad Request",
+  "message": "NO_PRIMARY_CONTACT: No primary emergency contact configured.",
+  "path": "/api/safety/sos"
+}
+```
+
+---
+
+## 4. Scoring & Normalization Logic
 
 Authoritative scoring calculations are executed strictly server-side in [`ScoringService.java`](file:///C:/StrideMate/backend/src/main/java/com/stridemate/api/scoring/ScoringService.java).
 
-### 8.1 Distance & Duration Point Formulas
+### 4.1 Metric Conversions & Flooring Rules
 
-$$\text{Points}_{\text{Running}} = \lfloor \text{distanceKm} \times 100 \rfloor$$
-$$\text{Points}_{\text{Walking}} = \lfloor \text{distanceKm} \times 50 \rfloor$$
-$$\text{Points}_{\text{Cycling}} = \lfloor \text{distanceKm} \times 25 \rfloor$$
-$$\text{Points}_{\text{Swimming}} = \left\lfloor \frac{\text{totalSeconds}}{60} \right\rfloor \times 15$$
-$$\text{Points}_{\text{Gym}} = \left\lfloor \frac{\text{totalSeconds}}{60} \right\rfloor \times 5$$
-$$\text{Points}_{\text{Daily Steps}} = \left\lfloor \frac{\text{steps}}{100} \right\rfloor \times 1 \quad \text{(100-step floor blocks)}$$
+#### A. Distance-Based Scoring (Flooring to Integer Points)
+Calculated via `BigDecimal.setScale(0, RoundingMode.FLOOR)`:
+- **Running:** $\lfloor \text{distanceKm} \times 100 \rfloor$ points ($1\text{ km} = 100\text{ pts}$)
+- **Walking:** $\lfloor \text{distanceKm} \times 50 \rfloor$ points ($1\text{ km} = 50\text{ pts}$)
+- **Cycling:** $\lfloor \text{distanceKm} \times 25 \rfloor$ points ($1\text{ km} = 25\text{ pts}$)
 
-### 8.2 Telemetry Auto-Segmented Scoring
-When an outdoor session contains mixed velocities (walking, jogging, running, cycling), the total distance is dynamically partitioned across the segments using weighted speed factors:
+#### B. Duration-Based Scoring (Flooring Completed Minutes)
+Calculated via integer division `totalSeconds / 60`:
+- **Swimming:** $\left\lfloor \frac{\text{totalSeconds}}{60} \right\rfloor \times 15$ points ($1\text{ min} = 15\text{ pts}$)
+- **Gym Workouts:** $\left\lfloor \frac{\text{totalSeconds}}{60} \right\rfloor \times 5$ points ($1\text{ min} = 5\text{ pts}$)
+
+#### C. Step-Based Scoring (100-Step Blocks)
+Calculated via integer division `steps / 100 * 1`:
+- **Daily Steps:** $\left\lfloor \frac{\text{steps}}{100} \right\rfloor \times 1$ point ($100\text{ steps} = 1\text{ pt}$)
+
+---
+
+### 4.2 Telemetry Auto-Segmented Scoring
+When an outdoor workout contains mixed velocities (walking, jogging, running, cycling), the total distance is dynamically partitioned across the segments using weighted speed factors:
 
 $$w_{\text{walk}} = t_{\text{walk}} \times 4.5, \quad w_{\text{jog}} = t_{\text{jog}} \times 8.0, \quad w_{\text{run}} = t_{\text{run}} \times 12.0, \quad w_{\text{cycle}} = t_{\text{cycle}} \times 20.0$$
 $$w_{\text{total}} = w_{\text{walk}} + w_{\text{jog}} + w_{\text{run}} + w_{\text{cycle}}$$
 $$d_{\text{segment}} = \text{distanceKm} \times \left(\frac{w_{\text{segment}}}{w_{\text{total}}}\right)$$
 $$\text{Total Points} = \lfloor d_{\text{walk}} \times 50 \rfloor + \lfloor d_{\text{jog}} \times 100 \rfloor + \lfloor d_{\text{run}} \times 100 \rfloor + \lfloor d_{\text{cycle}} \times 25 \rfloor$$
 
-### 8.3 Calorie Formulas
+---
+
+### 4.3 Calorie Formulas
 $$\text{Calories}_{\text{Segmented}} = \text{round}\left( \frac{t_{\text{walk}}}{60} \times 4.5 + \frac{t_{\text{jog}}}{60} \times 8.5 + \frac{t_{\text{run}}}{60} \times 12.0 + \frac{t_{\text{cycle}}}{60} \times 8.0 \right)$$
 $$\text{Calories}_{\text{Running Default}} = \text{round}(\text{distanceKm} \times 65.0)$$
 $$\text{Calories}_{\text{Walking Default}} = \text{round}(\text{distanceKm} \times 45.0)$$
 $$\text{Calories}_{\text{Cycling Default}} = \text{round}(\text{distanceKm} \times 30.0)$$
+$$\text{Calories}_{\text{Gym Default}} = \text{round}\left(\frac{\text{totalSeconds}}{60} \times 6.0\right)$$
+$$\text{Calories}_{\text{Swimming Default}} = \text{round}\left(\frac{\text{totalSeconds}}{60} \times 10.0\right)$$
 $$\text{Calories}_{\text{Steps Default}} = \text{round}(\text{steps} \times 0.04)$$
 
 ---
 
-## 9. Frontend Architecture & Visualizations
+### 4.4 Deterministic Quadratic Level Curve
+Implemented in [`GamificationService.java`](file:///C:/StrideMate/backend/src/main/java/com/stridemate/api/gamification/service/GamificationService.java). Each level $N \to N+1$ requires an additional $50 + (N \times 50)$ XP:
 
-### 9.1 Component Hierarchy & Route Structure
-```
-App.tsx (Theme Provider, Auth Provider, Router)
-├── Navbar.tsx (Navigation HUD, Theme Toggle, Profile Avatar)
-├── /dashboard -> Dashboard.tsx (Stats, Level Bar, Quests, 7-Day Consistency Ring)
-├── /track -> AddActivity.tsx (Live GPS, Simulator, HUD, Telemetry Breakdown)
-├── /history -> ActivityHistory.tsx (Workout Log, Filtering, Route Inspection)
-├── /analytics -> Analytics.tsx (Weekly Volume Charts, Sport Percentage Splits)
-├── /leaderboard -> Leaderboard.tsx (All-Time, Weekly, Monthly Ranks)
-├── /map -> SmartMap.tsx (Overpass Parks, TomTom Traffic, Running Suitability)
-├── /safety -> Safety.tsx (Emergency Contacts CRUD, 1.5s Hold SOS, Incident History)
-├── /profile -> Profile.tsx (Cartoon Animal Avatars, Custom Uploads)
-├── /login -> Login.tsx
-├── /register -> Register.tsx
-└── /verify-otp -> OtpVerification.tsx
-```
+$$\text{Cumulative XP for Level } N = \sum_{i=1}^{N-1} (50 + 50i) = 25(N-1)(N+2)$$
 
-### 9.2 Custom React Hooks
-- **`useGeoTracker.ts`:** Manages the HTML5 Geolocation API lifecycle, high-accuracy watch positions, velocity-based gait classification (walking $<6$ km/h, jogging $6\text{-}10$, running $>10$, cycling $>25$), simulated fallback mode, distance integration (Haversine formula), and breadcrumb accumulation.
-- **`useAuth.tsx`:** Manages JWT storage, authentication state, and Axios bearer token injection.
-- **`useTheme.tsx`:** Manages dark/light theme token switching with localStorage persistence.
+| Level | Cumulative XP Required | XP Delta to Next Level |
+| :--- | :--- | :--- |
+| **Level 1** | $0\text{ XP}$ | $100\text{ XP}$ |
+| **Level 2** | $100\text{ XP}$ | $150\text{ XP}$ |
+| **Level 3** | $250\text{ XP}$ | $200\text{ XP}$ |
+| **Level 4** | $450\text{ XP}$ | $250\text{ XP}$ |
+| **Level 5** | $700\text{ XP}$ | $300\text{ XP}$ |
+| **Level 10** | $2,700\text{ XP}$ | $550\text{ XP}$ |
 
 ---
 
-## 10. Trade-offs & Edge Cases Handled
+## 5. Frontend Architecture & Visualizations
 
-1. **GPS Noise & Stationary Jitter:** Handled in `useGeoTracker.ts` by enforcing a 5-meter minimum displacement threshold and rejecting fixes with accuracy $>25$ meters.
-2. **Route Point Downsampling:** High-frequency GPS logging can generate thousands of coordinates. `ActivityService.java` downsamples points exceeding 1,000 fixes prior to database insertion to conserve bandwidth and storage.
-3. **Privacy on Social Shares:** Sharing exact workout maps can expose home addresses. `ActivityService.java` provides a `?privacy=true` mode that trims the outer 10% of start and end coordinates.
-4. **Duplicate SOS Submissions:** Network retries or rapid button taps could send duplicate alerts. Enforced via a **5-minute idempotency window** keyed by `clientRequestId`.
-5. **Mobile Geolocation Over Plain HTTP:** Mobile Chrome blocks HTML5 Geolocation over non-HTTPS LAN IPs (`192.168.x.x`). Handled by detecting insecure origins and offering **Simulator Mode** or instructions for `chrome://flags`.
+### 5.1 Personal Dashboard Breakdown (`Dashboard.tsx`)
+- **Metric Cards:** Distance (km), Active Time (formatted hours/minutes), Calories Burned (kcal), and Point Balance.
+- **Level & Progression HUD:** Displays current level badge, progress bar, current XP, and XP remaining for the next level.
+- **7-Day Consistency Calendar:** Visualizes workout frequency across the past 7 UTC days with completed rings and streak indicators.
+- **Daily Quests Hub:** Dynamic quest cards displaying progress bars (`targetValue` vs `currentValue`), reward XP chips, and completion ticks.
+- **Recent Activities Feed:** Chronological list of recent workouts with sport badges, distance, points, and timestamps.
+
+### 5.2 Global Leaderboard Breakdown (`Leaderboard.tsx`)
+- **Time Frame Switching:** Tabs for **All-Time**, **This Week** (current UTC week), and **This Month** (current UTC month).
+- **Ranking Calculation Strategy:** The backend executes SQL aggregations over the selected time window, ordering athletes by `totalXp DESC, totalDistance DESC`. The frontend assigns podium medal badges (🥇 Gold, 🥈 Silver, 🥉 Bronze) for ranks 1–3, highlights the current user's rank row, and displays rank number, avatar, athlete name, level badge, activity count, distance, and total XP.
+
+### 5.3 Route Replay & Map Visualization (`RouteViewer.tsx`)
+- Powered by Leaflet and OpenStreetMap tiles.
+- Renders start marker (green pin), finish marker (red pin), and SVG polyline trace.
+- Interactive timeline scrubber with speed playback multiplier ($1\times, 2\times, 5\times$) that animates an athlete dot along the recorded route.
+
+### 5.4 Unified StrideLoader (`StrideLoader.tsx`)
+- Custom theme-adaptive SVG polyline animation representing an active pulse wave.
+- Used across Dashboard, Activity History, Leaderboard, Smart Map, and Safety views to provide a consistent loading experience.
 
 ---
 
-## 11. Security Considerations
+## 6. Trade-offs & Edge Cases Handled
 
-1. **Stateless JWT Architecture:** Bearer tokens validated per request via `JwtAuthenticationFilter`.
-2. **BCrypt Password Hashing:** Passwords hashed with 10 salt rounds before persistence.
-3. **CORS Governance:** Configured in `SecurityConfig.java` to support local development ports, private LAN subnets (`http://192.168.*:*`), and production Vercel origins (`https://*.vercel.app`).
-4. **Avatar Upload Security:** Max 5 MB limit, strict MIME type validation (`image/jpeg`, `image/png`, `image/webp`), UUID filename randomization, and path traversal prevention.
-5. **User Ownership Isolation:** All queries for activities, route points, progress, and emergency contacts are strictly partitioned by authenticated user ID (`user.getId()`).
+1. **Concurrent SOS Submissions & Network Flapping:** Handled via a **5-minute idempotency guard** keyed by `clientRequestId`. If a user taps the SOS button multiple times or the client retries over a weak connection, the backend returns the existing incident without creating duplicates.
+2. **Invalid GPS Coordinates & Telemetry Injection:** Handled in `SafetyService.java` by validating coordinate ranges ($\text{lat} \in [-90, 90]$, $\text{lon} \in [-180, 180]$, no NaN or Infinity) and rejecting non-positive distance values.
+3. **GPS Stationary Jitter:** Handled in `useGeoTracker.ts` by filtering out GPS fixes with accuracy $>25$ meters and enforcing a minimum 5-meter displacement threshold before accumulating distance.
+4. **GPS Route Downsampling:** High-frequency logging over long workouts can generate thousands of points. `ActivityService.java` downsamples routes exceeding 1,000 coordinates before persistence to conserve database bandwidth and memory.
+5. **Social Sharing Privacy:** Sharing exact workout maps can reveal residential or workplace locations. `ActivityService.java` provides a `?privacy=true` mode that trims the outer 10% of coordinates at the start and finish of the route.
+6. **Mobile Geolocation Over Plain HTTP:** Mobile Chrome disables the Geolocation API over unencrypted HTTP LAN IPs (`192.168.x.x`). Handled by detecting insecure origins and offering **Simulator Mode** or developer flag instructions.
 
 ---
 
-## 12. Known Limitations
+## 7. Security Considerations
 
-1. **Browser-Based Background GPS:** Mobile browsers (iOS Safari, Android Chrome) throttle JavaScript execution when the screen is locked. Native continuous background tracking requires a native app wrapper (e.g., Capacitor).
+1. **Stateless JWT Architecture:** Bearer tokens verified on each request via `JwtAuthenticationFilter` with 24-hour expiration.
+2. **Password Protection:** Passwords hashed with BCrypt (10 salt rounds).
+3. **CORS Governance:** Configured in `SecurityConfig.java` to support local dev ports, private LAN subnets (`http://192.168.*:*`), and production Vercel domains (`https://*.vercel.app`).
+4. **Avatar File Upload Validation:** Enforces a 5 MB max size, strict MIME type validation (`image/jpeg`, `image/png`, `image/webp`), UUID filename randomization, and path traversal protection.
+5. **User Isolation:** All database queries for activities, route points, progress, and emergency contacts are partitioned by authenticated user ID (`user.getId()`).
+
+---
+
+## 8. Known Limitations
+
+1. **Browser-Based Background GPS:** Mobile browsers (iOS Safari, Android Chrome) throttle JavaScript execution and GPS polling when the screen is locked. Native continuous background tracking requires a native app wrapper (e.g., Capacitor).
 2. **Indian Cellular DLT Compliance:** Live SpringEdge SMS delivery to Indian mobile numbers requires an active TRAI DLT header registration and approved message templates.
 3. **Local File Storage:** Uploaded avatar photos are stored on the local server disk (`/uploads/avatars`). Production environments with ephemeral containers require cloud object storage (e.g., AWS S3 / Supabase Storage).
 
 ---
 
-## 13. Local Development & Installation Guide
+## 9. Local Development & Installation Guide
 
-### 13.1 Prerequisites
+### 9.1 Prerequisites
 - **JDK 21 LTS** installed and configured on `PATH`
-- **Apache Maven 3.9+** (or Maven wrapper)
+- **Apache Maven 3.9+**
 - **Node.js v18+ LTS** and `npm`
 
-### 13.2 Backend Setup
+### 9.2 Backend Startup
 ```bash
 cd backend
 mvn spring-boot:run
 ```
 *Backend runs at `http://localhost:8080` with in-memory H2 database enabled by default.*
 
-### 13.3 Frontend Setup
+### 9.3 Frontend Startup
 ```bash
 cd frontend
 npm install
@@ -623,7 +581,7 @@ npm run dev
 
 ---
 
-## 14. Testing & Verification
+## 10. Testing & Verification
 
 ```bash
 # Execute full backend test suite (102 tests)
@@ -638,12 +596,3 @@ npm run build
 **Verification Results:**
 - **Backend Tests:** **102 / 102 passed** (0 failures, 0 errors, 0 skipped).
 - **Frontend Build:** Clean compilation with **0 TypeScript errors**.
-
----
-
-## 15. Future Improvements
-
-1. **Native Mobile Shell:** Package the frontend using Capacitor / Ionic to enable native background location services and push notifications.
-2. **Cloud Object Storage Adapter:** Implement Amazon S3 / Supabase Storage adapters for uploaded avatar images.
-3. **Social Friend Challenges:** Implement peer-to-peer fitness challenges and group activity leaderboards.
-4. **Offline Sync (PWA / IndexedDB):** Cache completed workouts in IndexedDB for automatic background syncing when offline.
