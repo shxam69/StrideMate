@@ -42,9 +42,13 @@ public class AuthControllerTest {
     @Autowired
     private com.stridemate.api.auth.repository.PasswordResetTokenRepository tokenRepository;
 
+    @Autowired
+    private com.stridemate.api.auth.repository.OtpRepository otpRepository;
+
     @BeforeEach
     public void setup() {
         tokenRepository.deleteAll();
+        otpRepository.deleteAll();
         activityRepository.deleteAll();
         userRepository.deleteAll();
         httpClient = HttpClient.newHttpClient();
@@ -55,7 +59,7 @@ public class AuthControllerTest {
     }
 
     @Test
-    public void testSuccessfulRegistration() throws Exception {
+    public void testSuccessfulRegistrationDoesNotReturnToken() throws Exception {
         RegisterRequest request = new RegisterRequest();
         request.setFirstName("John");
         request.setLastName("Doe");
@@ -72,7 +76,138 @@ public class AuthControllerTest {
         HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
         assertEquals(201, response.statusCode());
         Map<String, Object> body = objectMapper.readValue(response.body(), Map.class);
-        assertNotNull(body.get("token"));
+        // Authentication token MUST NOT be issued before OTP verification
+        assertNull(body.get("token"));
+        assertEquals("john.doe@example.com", body.get("email"));
+    }
+
+    @Test
+    public void testVerifyOtp_Success() throws Exception {
+        User user = new User();
+        user.setFirstName("Verified");
+        user.setLastName("User");
+        user.setEmail("verified.user@example.com");
+        user.setPasswordHash(passwordEncoder.encode("password123"));
+        user.setRole(com.stridemate.api.user.entity.Role.USER);
+        userRepository.save(user);
+
+        // Manually save valid OTP entity
+        com.stridemate.api.auth.entity.OtpEntity otpEntity = new com.stridemate.api.auth.entity.OtpEntity();
+        otpEntity.setEmail("verified.user@example.com");
+        otpEntity.setOtpHash(passwordEncoder.encode("123456"));
+        otpEntity.setExpiresAt(java.time.Instant.now().plus(5, java.time.temporal.ChronoUnit.MINUTES));
+        otpEntity.setAttempts(0);
+        otpRepository.save(otpEntity);
+
+        Map<String, String> verifyReq = Map.of("email", "verified.user@example.com", "otp", "123456");
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(getBaseUrl() + "/verify-otp"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(verifyReq)))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, response.statusCode());
+
+        Map<String, Object> body = objectMapper.readValue(response.body(), Map.class);
+        assertNotNull(body.get("token"), "JWT token must be created only after OTP verification");
+        Map<String, Object> userMap = (Map<String, Object>) body.get("user");
+        assertEquals("verified.user@example.com", userMap.get("email"));
+    }
+
+    @Test
+    public void testVerifyOtp_InvalidOtp_Fails() throws Exception {
+        User user = new User();
+        user.setFirstName("Invalid");
+        user.setLastName("OtpUser");
+        user.setEmail("invalid.otp@example.com");
+        user.setPasswordHash(passwordEncoder.encode("password123"));
+        user.setRole(com.stridemate.api.user.entity.Role.USER);
+        userRepository.save(user);
+
+        com.stridemate.api.auth.entity.OtpEntity otpEntity = new com.stridemate.api.auth.entity.OtpEntity();
+        otpEntity.setEmail("invalid.otp@example.com");
+        otpEntity.setOtpHash(passwordEncoder.encode("123456"));
+        otpEntity.setExpiresAt(java.time.Instant.now().plus(5, java.time.temporal.ChronoUnit.MINUTES));
+        otpEntity.setAttempts(0);
+        otpRepository.save(otpEntity);
+
+        Map<String, String> verifyReq = Map.of("email", "invalid.otp@example.com", "otp", "999999");
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(getBaseUrl() + "/verify-otp"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(verifyReq)))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        assertEquals(400, response.statusCode());
+    }
+
+    @Test
+    public void testVerifyOtp_ExpiredOtp_Fails() throws Exception {
+        User user = new User();
+        user.setFirstName("Expired");
+        user.setLastName("OtpUser");
+        user.setEmail("expired.otp@example.com");
+        user.setPasswordHash(passwordEncoder.encode("password123"));
+        user.setRole(com.stridemate.api.user.entity.Role.USER);
+        userRepository.save(user);
+
+        com.stridemate.api.auth.entity.OtpEntity otpEntity = new com.stridemate.api.auth.entity.OtpEntity();
+        otpEntity.setEmail("expired.otp@example.com");
+        otpEntity.setOtpHash(passwordEncoder.encode("123456"));
+        // Expired in past
+        otpEntity.setExpiresAt(java.time.Instant.now().minus(5, java.time.temporal.ChronoUnit.MINUTES));
+        otpEntity.setAttempts(0);
+        otpRepository.save(otpEntity);
+
+        Map<String, String> verifyReq = Map.of("email", "expired.otp@example.com", "otp", "123456");
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(getBaseUrl() + "/verify-otp"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(verifyReq)))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        assertEquals(400, response.statusCode());
+    }
+
+    @Test
+    public void testVerifyOtp_ReusedOtp_Fails() throws Exception {
+        User user = new User();
+        user.setFirstName("Reused");
+        user.setLastName("OtpUser");
+        user.setEmail("reused.otp@example.com");
+        user.setPasswordHash(passwordEncoder.encode("password123"));
+        user.setRole(com.stridemate.api.user.entity.Role.USER);
+        userRepository.save(user);
+
+        com.stridemate.api.auth.entity.OtpEntity otpEntity = new com.stridemate.api.auth.entity.OtpEntity();
+        otpEntity.setEmail("reused.otp@example.com");
+        otpEntity.setOtpHash(passwordEncoder.encode("123456"));
+        otpEntity.setExpiresAt(java.time.Instant.now().plus(5, java.time.temporal.ChronoUnit.MINUTES));
+        otpEntity.setAttempts(0);
+        otpRepository.save(otpEntity);
+
+        Map<String, String> verifyReq = Map.of("email", "reused.otp@example.com", "otp", "123456");
+        HttpRequest request1 = HttpRequest.newBuilder()
+                .uri(URI.create(getBaseUrl() + "/verify-otp"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(verifyReq)))
+                .build();
+
+        HttpResponse<String> response1 = httpClient.send(request1, HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, response1.statusCode());
+
+        // Second verification with same OTP must fail
+        HttpRequest request2 = HttpRequest.newBuilder()
+                .uri(URI.create(getBaseUrl() + "/verify-otp"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(verifyReq)))
+                .build();
+
+        HttpResponse<String> response2 = httpClient.send(request2, HttpResponse.BodyHandlers.ofString());
+        assertEquals(400, response2.statusCode());
     }
 
     @Test
@@ -252,6 +387,6 @@ public class AuthControllerTest {
                 .build();
 
         HttpResponse<String> meRes = httpClient.send(meReq, HttpResponse.BodyHandlers.ofString());
-        assertEquals(403, meRes.statusCode()); // or 401
+        assertEquals(401, meRes.statusCode());
     }
 }

@@ -8,17 +8,46 @@ import Dashboard from './pages/Dashboard';
 import Leaderboard from './pages/Leaderboard';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import Onboarding from './pages/Onboarding';
+import Profile from './pages/Profile';
+import AddActivity from './pages/AddActivity';
 import AuthLayout from './layouts/AuthLayout';
+import { ThemeProvider } from './context/ThemeContext';
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+// ProtectedRoute for standard app pages (requires auth + completed profile)
+const ProtectedRoute = ({ children, allowIncomplete = false }: { children: React.ReactNode; allowIncomplete?: boolean }) => {
     const { user, loading } = useAuth();
-    if (loading) return <div className="min-h-screen bg-slate-50 flex justify-center items-center">Loading...</div>;
-    if (!user) return <Navigate to="/login" />;
+    if (loading) {
+        return (
+            <div className="min-h-screen flex justify-center items-center bg-[var(--bg)]">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--accent)]"></div>
+            </div>
+        );
+    }
+    if (!user) return <Navigate to="/login" replace />;
+    
+    // If profile is incomplete and route doesn't allow incomplete profiles, redirect to onboarding
+    if (!user.profileCompleted && !allowIncomplete) {
+        return <Navigate to="/onboarding" replace />;
+    }
+
     return <>{children}</>;
 };
 
-import AddActivity from './pages/AddActivity';
-import { ThemeProvider } from './context/ThemeContext';
+// OnboardingRoute: requires auth, but redirects to dashboard if profile is already completed
+const OnboardingRoute = ({ children }: { children: React.ReactNode }) => {
+    const { user, loading } = useAuth();
+    if (loading) {
+        return (
+            <div className="min-h-screen flex justify-center items-center bg-[var(--bg)]">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--accent)]"></div>
+            </div>
+        );
+    }
+    if (!user) return <Navigate to="/login" replace />;
+    if (user.profileCompleted) return <Navigate to="/dashboard" replace />;
+    return <>{children}</>;
+};
 
 const App: React.FC = () => {
     return (
@@ -36,7 +65,13 @@ const App: React.FC = () => {
                             <Route path="/forgot-password" element={<ForgotPassword />} />
                             <Route path="/reset-password" element={<ResetPassword />} />
                             <Route path="/verify-phone" element={<OtpVerification />} />
+                            <Route path="/onboarding" element={<OnboardingRoute><Onboarding /></OnboardingRoute>} />
                         </Route>
+
+                        {/* Profile & Settings (Accessible anytime when logged in) */}
+                        <Route path="/profile" element={<ProtectedRoute allowIncomplete={true}><Profile /></ProtectedRoute>} />
+
+                        {/* Core Protected App Routes */}
                         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                         <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
                         <Route path="/add-activity" element={<ProtectedRoute><AddActivity /></ProtectedRoute>} />

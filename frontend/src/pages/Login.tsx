@@ -20,7 +20,11 @@ const Login: React.FC = () => {
         try {
             const res = await api.post('/auth/login', { email, password });
             login(res.data.token, res.data.user);
-            navigate('/dashboard');
+            if (res.data.user && res.data.user.profileCompleted === false) {
+                navigate('/onboarding');
+            } else {
+                navigate('/dashboard');
+            }
         } catch (err: any) {
             setError(err.response?.data?.message || 'Invalid credentials');
         } finally {

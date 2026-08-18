@@ -31,8 +31,8 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
-        AuthResponse response = authService.register(request);
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+        java.util.Map<String, Object> response = authService.register(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
@@ -56,11 +56,11 @@ public class AuthController {
 
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@Valid @RequestBody OtpVerifyRequest request) {
-        boolean isValid = otpService.verifyOtp(request.getEmail(), request.getOtp());
-        if (isValid) {
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.badRequest().body("Invalid, expired, or already used OTP");
+        try {
+            AuthResponse response = authService.verifyOtpAndAuthenticate(request.getEmail(), request.getOtp());
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("message", e.getMessage()));
         }
     }
 

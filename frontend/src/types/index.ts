@@ -5,6 +5,20 @@ export interface User {
     email: string;
     phoneNumber?: string;
     phoneVerified?: boolean;
+    dateOfBirth?: string;
+    gender?: string;
+    profilePhoto?: string;
+    profileCompleted: boolean;
+}
+
+export interface EmergencyContact {
+    id: string;
+    name: string;
+    relationship: string;
+    phoneNumber: string;
+    isPrimary: boolean;
+    createdAt?: string;
+    updatedAt?: string;
 }
 
 export interface AuthResponse {

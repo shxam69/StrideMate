@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { Activity } from 'lucide-react';
 import FloatingLabelInput from '../components/auth/FloatingLabelInput';
@@ -16,7 +15,6 @@ const Register: React.FC = () => {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const { login } = useAuth();
     const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -37,13 +35,10 @@ const Register: React.FC = () => {
                 phoneNumber: phoneNumber.trim().replace(/\s+/g, ""),
                 password
             };
-            const response = await api.post('/auth/register', payload);
+            await api.post('/auth/register', payload);
             
-            // Log in the user immediately with the returned token
-            login(response.data.token, response.data.user);
-            
-            // Proceed to phone verification (but actually it's email verification now)
-            navigate('/verify-phone', { state: { email: payload.email } });
+            // Navigate to email OTP verification screen without authenticating yet
+            navigate('/verify-phone', { state: { email: payload.email, otpRequested: true } });
         } catch (err: any) {
             setError(err.response?.data?.message || 'Registration failed');
         } finally {

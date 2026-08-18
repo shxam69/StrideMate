@@ -179,7 +179,7 @@ public class ActivityControllerTest {
         request.setDistanceKm(new BigDecimal("1.0"));
 
         HttpResponse<String> response = postActivity(request, null);
-        assertEquals(403, response.statusCode()); // or 401
+        assertEquals(401, response.statusCode());
     }
 
     @Test

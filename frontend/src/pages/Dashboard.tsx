@@ -8,17 +8,25 @@ import ActivityList from '../components/ActivityList';
 import StreakCard from '../components/StreakCard';
 import { Trophy, Activity, Medal, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Dashboard: React.FC = () => {
+    const { user, updateUser, refreshUser } = useAuth();
     const [data, setData] = useState<DashboardData | null>(null);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchDashboard = async () => {
+        const loadDashboard = async () => {
             try {
+                // Refresh user state from /api/users/me first to get authoritative profileCompleted
+                await refreshUser();
+
                 const res = await api.get('/dashboard/me');
                 setData(res.data);
+                if (res.data?.user) {
+                    updateUser(res.data.user);
+                }
             } catch (err) {
                 console.error(err);
                 navigate('/login');
@@ -26,7 +34,7 @@ const Dashboard: React.FC = () => {
                 setLoading(false);
             }
         };
-        fetchDashboard();
+        loadDashboard();
     }, [navigate]);
 
     if (loading) {
@@ -50,15 +58,37 @@ const Dashboard: React.FC = () => {
         return 'Good evening';
     };
 
+    const isProfileComplete = Boolean(user?.profileCompleted ?? data.user.profileCompleted);
+
     return (
         <div className="min-h-screen">
             <Navbar />
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-10 relative z-10">
-                <div className="mb-8 md:mb-10 relative">
-                    <h1 className="text-3xl md:text-5xl font-bold text-[var(--text)] tracking-tight mb-2">
-                        {greeting()}, <span className="text-[var(--accent)]">{data.user.firstName.toUpperCase()}</span>
-                    </h1>
-                    <p className="text-base md:text-lg text-[var(--text-muted)]">Here's what's happening with your fitness journey today.</p>
+                <div className="mb-8 md:mb-10 relative flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-3xl md:text-5xl font-bold text-[var(--text)] tracking-tight mb-2">
+                            {greeting()}, <span className="text-[var(--accent)]">{data.user.firstName.toUpperCase()}</span>
+                        </h1>
+                        <p className="text-base md:text-lg text-[var(--text-muted)]">Here's what's happening with your fitness journey today.</p>
+                    </div>
+
+                    <div>
+                        {isProfileComplete ? (
+                            <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-semibold shadow-[0_0_12px_rgba(16,185,129,0.15)]">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                <span>🟢 Profile complete</span>
+                            </div>
+                        ) : (
+                            <button
+                                onClick={() => navigate('/profile')}
+                                className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-semibold hover:bg-amber-500/25 transition-all shadow-[0_0_12px_rgba(245,158,11,0.15)] group"
+                            >
+                                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                                <span>🟡 Profile incomplete</span>
+                                <span className="text-[10px] underline opacity-80 group-hover:opacity-100 ml-1">Complete now →</span>
+                            </button>
+                        )}
+                    </div>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 md:gap-6 mb-8 md:mb-10">

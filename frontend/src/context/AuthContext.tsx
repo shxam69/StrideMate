@@ -7,6 +7,8 @@ interface AuthContextType {
     token: string | null;
     login: (token: string, user: User) => void;
     logout: () => void;
+    updateUser: (user: User) => void;
+    refreshUser: () => Promise<User | null>;
     loading: boolean;
 }
 
@@ -17,18 +19,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
     const [loading, setLoading] = useState(true);
 
+    const fetchCurrentUser = async () => {
+        try {
+            const response = await api.get('/users/me');
+            setUser(response.data);
+            return response.data;
+        } catch {
+            logout();
+            return null;
+        }
+    };
+
     useEffect(() => {
         if (token) {
-            api.get('/auth/me')
-                .then(response => {
-                    setUser(response.data);
-                })
-                .catch(() => {
-                    logout();
-                })
-                .finally(() => {
-                    setLoading(false);
-                });
+            fetchCurrentUser().finally(() => {
+                setLoading(false);
+            });
         } else {
             setLoading(false);
         }
@@ -40,6 +46,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(newUser);
     };
 
+    const updateUser = (updatedUser: User) => {
+        setUser(updatedUser);
+    };
+
+    const refreshUser = async () => {
+        if (token) {
+            return await fetchCurrentUser();
+        }
+        return null;
+    };
+
     const logout = () => {
         localStorage.removeItem('token');
         setToken(null);
@@ -47,7 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     return (
-        <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+        <AuthContext.Provider value={{ user, token, login, logout, updateUser, refreshUser, loading }}>
             {children}
         </AuthContext.Provider>
     );

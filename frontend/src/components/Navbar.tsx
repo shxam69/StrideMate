@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Activity, LogOut, LayoutDashboard, Trophy, Plus, Menu, X, Sun, Moon } from 'lucide-react';
+import { Activity, LogOut, LayoutDashboard, Trophy, Plus, Menu, X, Sun, Moon, User } from 'lucide-react';
 
 const Navbar: React.FC = () => {
     const { user, logout } = useAuth();
@@ -20,6 +20,7 @@ const Navbar: React.FC = () => {
         { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { path: '/leaderboard', label: 'Leaderboard', icon: Trophy },
         { path: '/add-activity', label: 'Add Activity', icon: Plus },
+        { path: '/profile', label: 'Profile', icon: User },
     ];
 
     const ThemeToggleBtn = ({ isMobile = false }) => (
@@ -55,12 +56,12 @@ const Navbar: React.FC = () => {
             <nav className="relative z-20 w-full glass-panel border-b border-[var(--glass-border)]">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="flex items-center justify-between h-20">
-                    <div className="flex items-center space-x-3">
-                        <div className="bg-[var(--accent)]/10 p-2 rounded-xl border border-[var(--accent)]/20 shadow-[0_0_15px_var(--glow-purple)]">
+                    <Link to="/dashboard" className="flex items-center space-x-3 group">
+                        <div className="bg-[var(--accent)]/10 p-2 rounded-xl border border-[var(--accent)]/20 shadow-[0_0_15px_var(--glow-purple)] group-hover:scale-105 transition-transform">
                             <Activity className="h-6 w-6 text-[var(--accent)]" />
                         </div>
                         <span className="font-bold text-xl tracking-tight text-[var(--text)]">StrideMate</span>
-                    </div>
+                    </Link>
 
                     {/* Desktop Menu */}
                     {user && (
@@ -77,6 +78,12 @@ const Navbar: React.FC = () => {
                                         >
                                             <Icon className={`h-4 w-4 ${isActive ? 'text-[var(--accent)]' : 'text-[var(--text-muted)]'}`} />
                                             <span>{link.label}</span>
+                                            {link.path === '/profile' && (
+                                                <span 
+                                                    className={`w-2 h-2 rounded-full ${user.profileCompleted ? 'bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,0.8)]' : 'bg-amber-400 animate-pulse shadow-[0_0_6px_rgba(251,191,36,0.8)]'}`}
+                                                    title={user.profileCompleted ? 'Profile complete' : 'Profile incomplete'}
+                                                />
+                                            )}
                                         </Link>
                                     );
                                 })}
@@ -86,7 +93,29 @@ const Navbar: React.FC = () => {
                             
                             <div className="flex items-center space-x-4">
                                 <ThemeToggleBtn />
-                                <span className="font-medium text-sm text-[var(--text)]">{user.firstName} {user.lastName}</span>
+                                
+                                <Link 
+                                    to="/profile" 
+                                    className="flex items-center space-x-2.5 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-all group"
+                                    title="View Profile"
+                                >
+                                    <div className="relative">
+                                        <div className="w-7 h-7 rounded-lg overflow-hidden bg-[var(--accent)]/20 flex items-center justify-center text-xs font-bold text-[var(--accent)]">
+                                            {user.profilePhoto ? (
+                                                <img src={user.profilePhoto} alt="" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <span>{user.firstName[0]}</span>
+                                            )}
+                                        </div>
+                                        <span 
+                                            className={`absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border border-[var(--bg)] ${user.profileCompleted ? 'bg-emerald-400' : 'bg-amber-400'}`}
+                                        />
+                                    </div>
+                                    <span className="font-medium text-sm text-[var(--text)] group-hover:text-[var(--accent)] transition-colors">
+                                        {user.firstName} {user.lastName}
+                                    </span>
+                                </Link>
+
                                 <button 
                                     onClick={handleLogout} 
                                     className="p-2 rounded-xl bg-[var(--glass-bg)] border border-[var(--glass-border)] hover:bg-[var(--danger)]/10 hover:border-[var(--danger)]/30 hover:text-[var(--danger)] text-[var(--text-muted)] transition-all duration-200 group"
@@ -129,15 +158,31 @@ const Navbar: React.FC = () => {
                                     key={link.path}
                                     to={link.path}
                                     onClick={() => setMobileMenuOpen(false)}
-                                    className={`flex items-center space-x-3 px-4 py-3.5 rounded-xl transition-colors ${isActive ? 'bg-[var(--accent)]/15 text-[var(--accent)]' : 'text-[var(--text-muted)] hover:bg-[var(--surface)] hover:text-[var(--text)]'}`}
+                                    className={`flex items-center justify-between px-4 py-3.5 rounded-xl transition-colors ${isActive ? 'bg-[var(--accent)]/15 text-[var(--accent)]' : 'text-[var(--text-muted)] hover:bg-[var(--surface)] hover:text-[var(--text)]'}`}
                                 >
-                                    <Icon className="h-5 w-5" />
-                                    <span className="font-medium text-base">{link.label}</span>
+                                    <div className="flex items-center space-x-3">
+                                        <Icon className="h-5 w-5" />
+                                        <span className="font-medium text-base">{link.label}</span>
+                                    </div>
+                                    {link.path === '/profile' && (
+                                        <span 
+                                            className={`w-2.5 h-2.5 rounded-full ${user.profileCompleted ? 'bg-emerald-400' : 'bg-amber-400'}`}
+                                        />
+                                    )}
                                 </Link>
                             );
                         })}
                         <div className="border-t border-[var(--border)] my-4 pt-4">
-                            <div className="px-4 pb-3 text-sm text-[var(--text-muted)] font-medium">Signed in as {user.firstName} {user.lastName}</div>
+                            <Link
+                                to="/profile"
+                                onClick={() => setMobileMenuOpen(false)}
+                                className="px-4 pb-3 flex items-center justify-between text-sm text-[var(--text)] font-medium"
+                            >
+                                <span>Signed in as {user.firstName} {user.lastName}</span>
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${user.profileCompleted ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-300'}`}>
+                                    {user.profileCompleted ? '🟢 Complete' : '🟡 Incomplete'}
+                                </span>
+                            </Link>
                             
                             <button 
                                 onClick={handleLogout}

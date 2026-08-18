@@ -46,6 +46,15 @@ public class User {
     @Column(nullable = false)
     private boolean enabled;
 
+    @Column(name = "date_of_birth")
+    private java.time.LocalDate dateOfBirth;
+
+    @Column(name = "gender")
+    private String gender;
+
+    @Column(name = "profile_photo", length = 1024)
+    private String profilePhoto;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = Instant.now();
@@ -96,4 +105,13 @@ public class User {
     
     public boolean isEnabled() { return enabled; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
+
+    public java.time.LocalDate getDateOfBirth() { return dateOfBirth; }
+    public void setDateOfBirth(java.time.LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
+
+    public String getGender() { return gender; }
+    public void setGender(String gender) { this.gender = gender; }
+
+    public String getProfilePhoto() { return profilePhoto; }
+    public void setProfilePhoto(String profilePhoto) { this.profilePhoto = profilePhoto; }
 }

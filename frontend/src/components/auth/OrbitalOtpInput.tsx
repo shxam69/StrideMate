@@ -4,11 +4,12 @@ interface OrbitalOtpInputProps {
     value: string;
     onChange: (value: string) => void;
     onComplete: (value: string) => Promise<boolean>;
+    disabled?: boolean;
 }
 
 type Phase = 'entering' | 'curling' | 'orbiting' | 'verified' | 'error';
 
-const OrbitalOtpInput: React.FC<OrbitalOtpInputProps> = ({ value, onChange, onComplete }) => {
+const OrbitalOtpInput: React.FC<OrbitalOtpInputProps> = ({ value, onChange, onComplete, disabled = false }) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const hubRef = useRef<HTMLSpanElement>(null);
@@ -16,59 +17,54 @@ const OrbitalOtpInput: React.FC<OrbitalOtpInputProps> = ({ value, onChange, onCo
     const [phase, setPhase] = useState<Phase>('entering');
 
     useEffect(() => {
-        // Auto-focus the input when the component mounts
+        // Auto-focus input on mount or reset
         const timer = setTimeout(() => {
-            if (phase === 'entering') {
+            if (phase === 'entering' && !disabled) {
                 inputRef.current?.focus();
             }
-        }, 300);
+        }, 200);
         return () => clearTimeout(timer);
-    }, [phase]);
+    }, [phase, disabled]);
 
     useEffect(() => {
-        if (value.length === 6 && phase === 'entering') {
+        if (value.length === 6 && phase === 'entering' && !disabled) {
             runAnimationSequence();
         }
-    }, [value, phase]);
+    }, [value, phase, disabled]);
 
     const runAnimationSequence = async () => {
         if (!containerRef.current || !hubRef.current) return;
-        
+
         // 1. Curl into orbit
         setPhase('curling');
-        await new Promise(r => setTimeout(r, 700)); // 600ms CSS + 100ms delay
+        await new Promise(r => setTimeout(r, 600));
 
         // 2. Trigger Orbit Animation
         setPhase('orbiting');
-        
-        // Concurrently fire the verification API
+
+        // Concurrently fire verification API
         const apiPromise = onComplete(value);
-        
+
         const hubRect = hubRef.current.getBoundingClientRect();
         const hubCenterX = hubRect.left + hubRect.width / 2;
         const hubCenterY = hubRect.top + hubRect.height / 2;
 
         const animations = slotRefs.current.map((slot) => {
             if (!slot) return null;
-            
+
             const slotRect = slot.getBoundingClientRect();
             const slotCenterX = slotRect.left + slotRect.width / 2;
             const slotCenterY = slotRect.top + slotRect.height / 2;
-            
-            // Calculate dx and dy as the delta between each slot's center and the hub center
+
             const dx = slotCenterX - hubCenterX;
             const dy = slotCenterY - hubCenterY;
-            
-            // The slot and the hub are both centered in the same 200x200 container,
-            // so the slot's own untransformed center already sits exactly on the hub.
-            // Pivoting there (not dx/dy away from it) is what makes rotate() trace a
-            // perfect circle around the hub instead of swinging around empty space.
+
             slot.style.transformOrigin = '50% 50%';
-            
+
             return slot.animate(
                 [
                     { transform: `rotate(0deg) translate(${dx}px, ${dy}px)` },
-                    { transform: `rotate(450deg) translate(${dx}px, ${dy}px)` } 
+                    { transform: `rotate(450deg) translate(${dx}px, ${dy}px)` }
                 ],
                 {
                     duration: 800,
@@ -78,7 +74,6 @@ const OrbitalOtpInput: React.FC<OrbitalOtpInputProps> = ({ value, onChange, onCo
             );
         });
 
-        // Wait for orbit animation to finish
         await Promise.all(animations.map(a => a?.finished));
 
         // Check verification result
@@ -95,26 +90,24 @@ const OrbitalOtpInput: React.FC<OrbitalOtpInputProps> = ({ value, onChange, onCo
                 });
                 setPhase('entering');
                 onChange('');
+                inputRef.current?.focus();
             }, 600);
             return;
         }
 
-        // To allow CSS '.success' class to take over and animate to 0,0,
-        // we must cancel the forwards fill of the Web Animation so CSS applies.
-        // We do this instantly before React renders the success class.
+        // Cancel fill on success so CSS transition applies
         slotRefs.current.forEach(slot => {
             if (slot) {
                 const anims = slot.getAnimations();
                 anims.forEach(a => a.cancel());
             }
         });
-        
-        // Success collapse
+
         setPhase('verified');
     };
 
-    const handleContainerClick = () => {
-        if (phase === 'entering' || phase === 'error') {
+    const handleFocusInput = () => {
+        if ((phase === 'entering' || phase === 'error') && !disabled) {
             inputRef.current?.focus();
         }
     };
@@ -125,34 +118,46 @@ const OrbitalOtpInput: React.FC<OrbitalOtpInputProps> = ({ value, onChange, onCo
         onChange(val);
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Backspace' && value.length > 0) {
+            onChange(value.slice(0, -1));
+        }
+    };
+
     const dataState = phase === 'entering' || phase === 'error' ? 'line' : 'orbit';
 
     return (
-        <div className="relative flex flex-col items-center justify-center w-full">
+        <div 
+            className="relative flex flex-col items-center justify-center w-full max-w-[360px] select-none"
+            onClick={handleFocusInput}
+            onTouchStart={handleFocusInput}
+        >
             <div 
                 ref={containerRef}
-                className={`relative w-[200px] h-[200px] flex items-center justify-center cursor-text ${phase === 'error' ? 'animate-shake' : ''}`}
+                className={`relative w-[280px] sm:w-[320px] h-[180px] flex items-center justify-center cursor-text ${phase === 'error' ? 'animate-shake' : ''}`}
                 style={{ zIndex: 1 }}
-                onClick={handleContainerClick}
             >
+                {/* Full-width transparent input spanning entire container for reliable focus & keyboard */}
                 <input
                     ref={inputRef}
                     type="tel"
                     inputMode="numeric"
                     autoComplete="one-time-code"
                     maxLength={6}
+                    disabled={disabled || phase === 'curling' || phase === 'orbiting' || phase === 'verified'}
                     value={phase === 'entering' || phase === 'error' ? value : ''}
                     onChange={handleChange}
-                    className="absolute top-0 left-0 w-full h-full opacity-0 z-50 text-transparent bg-transparent border-none outline-none focus:outline-none focus:ring-0"
+                    onKeyDown={handleKeyDown}
+                    className="absolute inset-0 w-full h-full opacity-0 z-50 text-transparent bg-transparent border-none outline-none focus:outline-none focus:ring-0 cursor-text"
                     style={{ 
                         caretColor: 'transparent',
                         pointerEvents: (phase === 'entering' || phase === 'error') ? 'auto' : 'none'
                     }}
                 />
 
-                {/* SVG Dotted Path */}
+                {/* SVG Dotted Orbit Path */}
                 <svg 
-                    className={`absolute top-0 left-0 w-full h-full pointer-events-none transition-colors duration-400 ease-out`} 
+                    className="absolute top-0 left-0 w-full h-full pointer-events-none transition-colors duration-400 ease-out" 
                     viewBox="0 0 200 200"
                     style={{
                         opacity: phase === 'verified' ? 0 : 1
@@ -200,14 +205,17 @@ const OrbitalOtpInput: React.FC<OrbitalOtpInputProps> = ({ value, onChange, onCo
                     const digit = value[index] || '';
                     const isActive = value.length === index && (phase === 'entering' || phase === 'error');
                     
-                    let borderColor = 'border-[var(--border)]';
+                    let borderColor = 'border-white/15';
                     let shadow = '';
                     
                     if (phase === 'error') {
                         borderColor = 'border-[var(--danger)]';
+                        shadow = 'shadow-[0_0_12px_rgba(244,63,94,0.3)]';
                     } else if (isActive) {
                         borderColor = 'border-[var(--accent)]';
                         shadow = 'shadow-[0_0_12px_var(--glow-blue)]';
+                    } else if (digit) {
+                        borderColor = 'border-[var(--accent)]/50';
                     }
 
                     return (
@@ -216,25 +224,39 @@ const OrbitalOtpInput: React.FC<OrbitalOtpInputProps> = ({ value, onChange, onCo
                             ref={el => { slotRefs.current[index] = el; }}
                             data-state={dataState}
                             data-index={index}
-                            className={`slot ${phase === 'verified' ? 'success' : ''} absolute top-1/2 left-1/2 -mt-[26px] -ml-[26px] pointer-events-none flex items-center justify-center w-[52px] h-[52px] bg-[var(--surface-elevated)] rounded-xl text-[var(--text)] text-xl font-semibold border ${borderColor} ${shadow}`}
+                            className={`slot ${phase === 'verified' ? 'success' : ''} absolute top-1/2 left-1/2 -mt-[22px] -ml-[22px] sm:-mt-[26px] sm:-ml-[26px] pointer-events-none flex items-center justify-center w-[44px] h-[44px] sm:w-[52px] sm:h-[52px] bg-[var(--surface-elevated)] rounded-xl text-[var(--text)] text-lg sm:text-xl font-bold border ${borderColor} ${shadow}`}
                             style={{
                                 transition: 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)'
                             }}
                         >
                             {digit}
+                            {isActive && (
+                                <span className="absolute bottom-2 left-1/2 -translate-x-1/2 w-3 h-0.5 bg-[var(--accent)] animate-pulse"></span>
+                            )}
                         </div>
                     );
                 })}
             </div>
             
             <style>{`
-                /* Horizontal Line Positions */
-                .slot[data-state="line"][data-index="0"] { transform: translate(-130px, 0); }
-                .slot[data-state="line"][data-index="1"] { transform: translate(-78px, 0); }
-                .slot[data-state="line"][data-index="2"] { transform: translate(-26px, 0); }
-                .slot[data-state="line"][data-index="3"] { transform: translate(26px, 0); }
-                .slot[data-state="line"][data-index="4"] { transform: translate(78px, 0); }
-                .slot[data-state="line"][data-index="5"] { transform: translate(130px, 0); }
+                /* Responsive Horizontal Line Positions */
+                @media (max-width: 639px) {
+                    .slot[data-state="line"][data-index="0"] { transform: translate(-115px, 0); }
+                    .slot[data-state="line"][data-index="1"] { transform: translate(-69px, 0); }
+                    .slot[data-state="line"][data-index="2"] { transform: translate(-23px, 0); }
+                    .slot[data-state="line"][data-index="3"] { transform: translate(23px, 0); }
+                    .slot[data-state="line"][data-index="4"] { transform: translate(69px, 0); }
+                    .slot[data-state="line"][data-index="5"] { transform: translate(115px, 0); }
+                }
+
+                @media (min-width: 640px) {
+                    .slot[data-state="line"][data-index="0"] { transform: translate(-130px, 0); }
+                    .slot[data-state="line"][data-index="1"] { transform: translate(-78px, 0); }
+                    .slot[data-state="line"][data-index="2"] { transform: translate(-26px, 0); }
+                    .slot[data-state="line"][data-index="3"] { transform: translate(26px, 0); }
+                    .slot[data-state="line"][data-index="4"] { transform: translate(78px, 0); }
+                    .slot[data-state="line"][data-index="5"] { transform: translate(130px, 0); }
+                }
 
                 /* Circular Orbit Positions */
                 .slot[data-state="orbit"][data-index="0"] { transform: translate(0px, -66px); }

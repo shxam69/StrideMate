@@ -37,6 +37,9 @@ public class DashboardControllerTest {
     private ActivityRepository activityRepository;
 
     @Autowired
+    private com.stridemate.api.user.repository.EmergencyContactRepository emergencyContactRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     private ObjectMapper objectMapper = new ObjectMapper();
@@ -47,6 +50,7 @@ public class DashboardControllerTest {
     @BeforeEach
     public void setup() throws Exception {
         httpClient = HttpClient.newHttpClient();
+        emergencyContactRepository.deleteAll();
         activityRepository.deleteAll();
         userRepository.deleteAll();
 
@@ -85,7 +89,7 @@ public class DashboardControllerTest {
                 .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        assertEquals(403, response.statusCode()); // or 401
+        assertEquals(401, response.statusCode());
     }
 
     @Test

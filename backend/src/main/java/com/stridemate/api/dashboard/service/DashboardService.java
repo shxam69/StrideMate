@@ -20,24 +20,21 @@ public class DashboardService {
 
     private final ActivityRepository activityRepository;
     private final UserRepository userRepository;
+    private final com.stridemate.api.user.service.UserService userService;
 
     @Autowired
-    public DashboardService(ActivityRepository activityRepository, UserRepository userRepository) {
+    public DashboardService(ActivityRepository activityRepository, UserRepository userRepository,
+                            com.stridemate.api.user.service.UserService userService) {
         this.activityRepository = activityRepository;
         this.userRepository = userRepository;
+        this.userService = userService;
     }
 
     public DashboardResponseDto getDashboardForUser(String email) {
         User user = userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
 
         DashboardResponseDto response = new DashboardResponseDto();
-        
-        UserDto userDto = new UserDto();
-        userDto.setId(user.getId());
-        userDto.setEmail(user.getEmail());
-        userDto.setFirstName(user.getFirstName());
-        userDto.setLastName(user.getLastName());
-        response.setUser(userDto);
+        response.setUser(userService.toDto(user));
 
         Long totalPoints = activityRepository.getTotalPointsByUserId(user.getId());
         Long totalActivities = activityRepository.countActivitiesByUserId(user.getId());
