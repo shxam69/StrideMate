@@ -389,4 +389,30 @@ public class AuthControllerTest {
         HttpResponse<String> meRes = httpClient.send(meReq, HttpResponse.BodyHandlers.ofString());
         assertEquals(401, meRes.statusCode());
     }
+
+    @Test
+    public void testOptionsPreflightForLanMobileOrigin() throws Exception {
+        HttpRequest optionsReq = HttpRequest.newBuilder()
+                .uri(URI.create(getBaseUrl() + "/register"))
+                .header("Origin", "http://192.168.1.6:5173")
+                .header("Access-Control-Request-Method", "POST")
+                .header("Access-Control-Request-Headers", "content-type")
+                .method("OPTIONS", HttpRequest.BodyPublishers.noBody())
+                .build();
+
+        HttpResponse<String> response = httpClient.send(optionsReq, HttpResponse.BodyHandlers.ofString());
+        
+        // Preflight OPTIONS should succeed with 200 OK or 204 No Content
+        assertEquals(200, response.statusCode());
+        
+        // Assert CORS headers
+        String allowOrigin = response.headers().firstValue("Access-Control-Allow-Origin").orElse(null);
+        assertEquals("http://192.168.1.6:5173", allowOrigin);
+        
+        String allowMethods = response.headers().firstValue("Access-Control-Allow-Methods").orElse("");
+        assertEquals(true, allowMethods.contains("POST"));
+        
+        String allowCredentials = response.headers().firstValue("Access-Control-Allow-Credentials").orElse(null);
+        assertEquals("true", allowCredentials);
+    }
 }

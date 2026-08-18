@@ -38,13 +38,14 @@ public class ActivityControllerTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
     private HttpClient httpClient;
     private String jwtToken;
     private User testUser;
 
     @BeforeEach
     public void setup() throws Exception {
+        objectMapper.findAndRegisterModules();
         httpClient = HttpClient.newHttpClient();
         
         activityRepository.deleteAll();
@@ -225,5 +226,142 @@ public class ActivityControllerTest {
         // It could fail at @PositiveOrZero validation or in service
         Map<String, Object> body = objectMapper.readValue(response.body(), Map.class);
         assertNotNull(body.get("message"));
+    }
+
+    // ==========================================
+    // PHASE 3 — LIVE TRACKER AUTOMATED TESTS
+    // ==========================================
+
+    @Test
+    public void testCreateAutoTrackSegmentedActivity() throws Exception {
+        ActivityRequest request = new ActivityRequest();
+        request.setDistanceKm(new BigDecimal("2.50"));
+        request.setTotalDurationSeconds(900); // 15 mins
+        request.setWalkingDurationSeconds(300); // 5 mins
+        request.setJoggingDurationSeconds(300); // 5 mins
+        request.setRunningDurationSeconds(300); // 5 mins
+        request.setStartedAt(java.time.Instant.now().minusSeconds(900));
+        request.setEndedAt(java.time.Instant.now());
+
+        HttpResponse<String> response = postActivity(request, jwtToken);
+        assertEquals(201, response.statusCode());
+
+        Map<String, Object> body = objectMapper.readValue(response.body(), Map.class);
+        assertNotNull(body.get("activityId"));
+        assertNotNull(body.get("points"));
+        
+        // Server-calculated points must be > 0 and deterministic
+        int points = ((Number) body.get("points")).intValue();
+        assertEquals(225, points); // weighted segment calculation: 22 (walk) + 81 (jog) + 122 (run) = 225 pts
+
+        // Calories must be calculated server-side
+        assertNotNull(body.get("calories"));
+        int calories = ((Number) body.get("calories")).intValue();
+        assertEquals(125, calories); // (5m*4.5 + 5m*8.5 + 5m*12.0) = 22.5 + 42.5 + 60 = 125 kcal
+
+        // Check ownership
+        assertEquals(testUser.getId().toString(), body.get("userId"));
+    }
+
+    @Test
+    public void testAutoTrackImpossibleSpeedRejection() throws Exception {
+        ActivityRequest request = new ActivityRequest();
+        request.setDistanceKm(new BigDecimal("25.0")); // 25km in 300 seconds = 300 km/h (impossible)
+        request.setTotalDurationSeconds(300);
+        request.setRunningDurationSeconds(300);
+
+        HttpResponse<String> response = postActivity(request, jwtToken);
+        assertEquals(400, response.statusCode());
+
+        Map<String, Object> body = objectMapper.readValue(response.body(), Map.class);
+        String message = (String) body.get("message");
+        assertNotNull(message);
+        assertEquals(true, message.contains("Impossible speed/distance telemetry detected"));
+    }
+
+    @Test
+    public void testAutoTrackSegmentDurationsSumExceedsTotal() throws Exception {
+        ActivityRequest request = new ActivityRequest();
+        request.setDistanceKm(new BigDecimal("1.0"));
+        request.setTotalDurationSeconds(300); // 5 mins total
+        request.setWalkingDurationSeconds(300); // 5 mins
+        request.setRunningDurationSeconds(300); // 5 mins (sum = 10 mins > 5 mins + 60s tolerance)
+
+        HttpResponse<String> response = postActivity(request, jwtToken);
+        assertEquals(400, response.statusCode());
+
+        Map<String, Object> body = objectMapper.readValue(response.body(), Map.class);
+        String message = (String) body.get("message");
+        assertNotNull(message);
+        assertEquals(true, message.contains("exceeds total duration"));
+    }
+
+    @Test
+    public void testManualGymTimerActivity() throws Exception {
+        ActivityRequest request = new ActivityRequest();
+        request.setSport(SportType.GYM);
+        request.setDurationMinutes(30);
+        request.setDurationSeconds(0);
+        request.setTotalDurationSeconds(1800);
+
+        HttpResponse<String> response = postActivity(request, jwtToken);
+        assertEquals(201, response.statusCode());
+
+        Map<String, Object> body = objectMapper.readValue(response.body(), Map.class);
+        assertEquals(150, body.get("points")); // 30 mins * 5 pts/min = 150 pts
+        assertEquals(180, body.get("calories")); // 30 mins * 6 kcal/min = 180 kcal
+    }
+
+    @Test
+    public void testManualSwimTimerActivity() throws Exception {
+        ActivityRequest request = new ActivityRequest();
+        request.setSport(SportType.SWIMMING);
+        request.setDurationMinutes(20);
+        request.setDurationSeconds(0);
+        request.setTotalDurationSeconds(1200);
+
+        HttpResponse<String> response = postActivity(request, jwtToken);
+        assertEquals(201, response.statusCode());
+
+        Map<String, Object> body = objectMapper.readValue(response.body(), Map.class);
+        assertEquals(300, body.get("points")); // 20 mins * 15 pts/min = 300 pts
+        assertEquals(200, body.get("calories")); // 20 mins * 10 kcal/min = 200 kcal
+    }
+
+    @Test
+    public void testAutoTrackDominantSportInference() throws Exception {
+        // 1. Walking dominant
+        ActivityRequest walkReq = new ActivityRequest();
+        walkReq.setDistanceKm(new BigDecimal("1.2"));
+        walkReq.setTotalDurationSeconds(600);
+        walkReq.setWalkingDurationSeconds(500);
+        walkReq.setRunningDurationSeconds(100);
+        HttpResponse<String> walkRes = postActivity(walkReq, jwtToken);
+        assertEquals(201, walkRes.statusCode());
+        Map<String, Object> walkBody = objectMapper.readValue(walkRes.body(), Map.class);
+        assertEquals("WALKING", walkBody.get("sport"));
+
+        // 2. Running dominant
+        ActivityRequest runReq = new ActivityRequest();
+        runReq.setDistanceKm(new BigDecimal("2.0"));
+        runReq.setTotalDurationSeconds(600);
+        runReq.setWalkingDurationSeconds(100);
+        runReq.setJoggingDurationSeconds(200);
+        runReq.setRunningDurationSeconds(300);
+        HttpResponse<String> runRes = postActivity(runReq, jwtToken);
+        assertEquals(201, runRes.statusCode());
+        Map<String, Object> runBody = objectMapper.readValue(runRes.body(), Map.class);
+        assertEquals("RUNNING", runBody.get("sport"));
+
+        // 3. Cycling dominant
+        ActivityRequest cycleReq = new ActivityRequest();
+        cycleReq.setDistanceKm(new BigDecimal("5.0"));
+        cycleReq.setTotalDurationSeconds(900);
+        cycleReq.setWalkingDurationSeconds(60);
+        cycleReq.setCyclingDurationSeconds(840);
+        HttpResponse<String> cycleRes = postActivity(cycleReq, jwtToken);
+        assertEquals(201, cycleRes.statusCode());
+        Map<String, Object> cycleBody = objectMapper.readValue(cycleRes.body(), Map.class);
+        assertEquals("CYCLING", cycleBody.get("sport"));
     }
 }

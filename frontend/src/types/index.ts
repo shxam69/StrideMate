@@ -32,10 +32,36 @@ export interface ActivityHistory {
     distanceKm?: number;
     durationMinutes?: number;
     durationSeconds?: number;
+    totalDurationSeconds?: number;
+    calories?: number;
     steps?: number;
     points: number;
     recordedAt: string;
 }
+
+export type DetectedActivity = 'IDLE' | 'WALKING' | 'JOGGING' | 'RUNNING' | 'CYCLING';
+
+export interface MovementBreakdown {
+    walkingSeconds: number;
+    joggingSeconds: number;
+    runningSeconds: number;
+    cyclingSeconds: number;
+    idleSeconds: number;
+}
+
+export interface LiveActivityPayload {
+    sport?: string;
+    distanceKm?: number;
+    totalDurationSeconds: number;
+    walkingDurationSeconds: number;
+    joggingDurationSeconds: number;
+    runningDurationSeconds: number;
+    cyclingDurationSeconds: number;
+    calories?: number;
+    startedAt: string;
+    endedAt: string;
+}
+
 
 export interface VolumeOverTime {
     date: string;

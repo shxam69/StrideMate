@@ -12,6 +12,8 @@ public class ActivityHistoryDto {
     private Integer durationMinutes;
     private Integer durationSeconds;
     private Integer steps;
+    private Integer totalDurationSeconds;
+    private Integer calories;
     private Integer points;
     private Instant recordedAt;
 
@@ -32,6 +34,12 @@ public class ActivityHistoryDto {
 
     public Integer getSteps() { return steps; }
     public void setSteps(Integer steps) { this.steps = steps; }
+
+    public Integer getTotalDurationSeconds() { return totalDurationSeconds; }
+    public void setTotalDurationSeconds(Integer totalDurationSeconds) { this.totalDurationSeconds = totalDurationSeconds; }
+
+    public Integer getCalories() { return calories; }
+    public void setCalories(Integer calories) { this.calories = calories; }
 
     public Integer getPoints() { return points; }
     public void setPoints(Integer points) { this.points = points; }

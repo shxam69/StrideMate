@@ -29,6 +29,30 @@ public class Activity {
     private Integer durationSeconds;
     private Integer steps;
 
+    @Column(name = "total_duration_seconds")
+    private Integer totalDurationSeconds;
+
+    @Column(name = "walking_duration_seconds")
+    private Integer walkingDurationSeconds;
+
+    @Column(name = "jogging_duration_seconds")
+    private Integer joggingDurationSeconds;
+
+    @Column(name = "running_duration_seconds")
+    private Integer runningDurationSeconds;
+
+    @Column(name = "cycling_duration_seconds")
+    private Integer cyclingDurationSeconds;
+
+    @Column(name = "calories")
+    private Integer calories;
+
+    @Column(name = "started_at")
+    private Instant startedAt;
+
+    @Column(name = "ended_at")
+    private Instant endedAt;
+
     @Column(nullable = false)
     private Integer points;
 
@@ -67,6 +91,30 @@ public class Activity {
 
     public Integer getSteps() { return steps; }
     public void setSteps(Integer steps) { this.steps = steps; }
+
+    public Integer getTotalDurationSeconds() { return totalDurationSeconds; }
+    public void setTotalDurationSeconds(Integer totalDurationSeconds) { this.totalDurationSeconds = totalDurationSeconds; }
+
+    public Integer getWalkingDurationSeconds() { return walkingDurationSeconds; }
+    public void setWalkingDurationSeconds(Integer walkingDurationSeconds) { this.walkingDurationSeconds = walkingDurationSeconds; }
+
+    public Integer getJoggingDurationSeconds() { return joggingDurationSeconds; }
+    public void setJoggingDurationSeconds(Integer joggingDurationSeconds) { this.joggingDurationSeconds = joggingDurationSeconds; }
+
+    public Integer getRunningDurationSeconds() { return runningDurationSeconds; }
+    public void setRunningDurationSeconds(Integer runningDurationSeconds) { this.runningDurationSeconds = runningDurationSeconds; }
+
+    public Integer getCyclingDurationSeconds() { return cyclingDurationSeconds; }
+    public void setCyclingDurationSeconds(Integer cyclingDurationSeconds) { this.cyclingDurationSeconds = cyclingDurationSeconds; }
+
+    public Integer getCalories() { return calories; }
+    public void setCalories(Integer calories) { this.calories = calories; }
+
+    public Instant getStartedAt() { return startedAt; }
+    public void setStartedAt(Instant startedAt) { this.startedAt = startedAt; }
+
+    public Instant getEndedAt() { return endedAt; }
+    public void setEndedAt(Instant endedAt) { this.endedAt = endedAt; }
 
     public Integer getPoints() { return points; }
     public void setPoints(Integer points) { this.points = points; }

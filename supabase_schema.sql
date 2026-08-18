@@ -36,10 +36,29 @@ CREATE TABLE IF NOT EXISTS public.activities (
     duration_minutes INTEGER,
     duration_seconds INTEGER,
     steps INTEGER,
+    total_duration_seconds INTEGER,
+    walking_duration_seconds INTEGER,
+    jogging_duration_seconds INTEGER,
+    running_duration_seconds INTEGER,
+    cycling_duration_seconds INTEGER,
+    calories INTEGER,
+    started_at TIMESTAMP WITH TIME ZONE,
+    ended_at TIMESTAMP WITH TIME ZONE,
     points INTEGER NOT NULL DEFAULT 0,
     recorded_at TIMESTAMP WITH TIME ZONE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
+
+-- Phase 3 Safe Incremental Column Migration (for existing deployments)
+ALTER TABLE public.activities ADD COLUMN IF NOT EXISTS total_duration_seconds INTEGER;
+ALTER TABLE public.activities ADD COLUMN IF NOT EXISTS walking_duration_seconds INTEGER;
+ALTER TABLE public.activities ADD COLUMN IF NOT EXISTS jogging_duration_seconds INTEGER;
+ALTER TABLE public.activities ADD COLUMN IF NOT EXISTS running_duration_seconds INTEGER;
+ALTER TABLE public.activities ADD COLUMN IF NOT EXISTS cycling_duration_seconds INTEGER;
+ALTER TABLE public.activities ADD COLUMN IF NOT EXISTS calories INTEGER;
+ALTER TABLE public.activities ADD COLUMN IF NOT EXISTS started_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE public.activities ADD COLUMN IF NOT EXISTS ended_at TIMESTAMP WITH TIME ZONE;
+
 
 -- Index on activities
 CREATE INDEX IF NOT EXISTS idx_activities_user_id ON public.activities(user_id);

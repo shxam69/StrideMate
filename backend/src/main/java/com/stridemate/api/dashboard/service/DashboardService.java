@@ -88,6 +88,8 @@ public class DashboardService {
         dto.setDistanceKm(activity.getDistanceKm());
         dto.setDurationMinutes(activity.getDurationMinutes());
         dto.setDurationSeconds(activity.getDurationSeconds());
+        dto.setTotalDurationSeconds(activity.getTotalDurationSeconds());
+        dto.setCalories(activity.getCalories());
         dto.setSteps(activity.getSteps());
         dto.setPoints(activity.getPoints());
         dto.setRecordedAt(activity.getRecordedAt());
