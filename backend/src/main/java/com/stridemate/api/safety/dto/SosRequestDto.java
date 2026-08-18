@@ -18,6 +18,14 @@ public class SosRequestDto {
         this.activityId = activityId;
     }
 
+    public SosRequestDto(Double latitude, Double longitude, Double accuracyMeters, UUID activityId, String clientRequestId) {
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.accuracyMeters = accuracyMeters;
+        this.activityId = activityId;
+        this.clientRequestId = clientRequestId;
+    }
+
     public Double getLatitude() { return latitude; }
     public void setLatitude(Double latitude) { this.latitude = latitude; }
 

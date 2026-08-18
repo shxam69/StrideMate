@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
+import StrideLoader from '../components/ui/StrideLoader';
 import api from '../services/api';
 import type { AnalyticsData } from '../types';
 import { 
@@ -74,9 +75,8 @@ const Analytics: React.FC = () => {
                 </div>
 
                 {loading ? (
-                    <div className="text-center py-20">
-                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--accent)] mx-auto mb-3"></div>
-                        <p className="text-xs text-white/50">Calculating analytics...</p>
+                    <div className="py-24">
+                        <StrideLoader size="lg" text="Calculating fitness analytics & lifetime trends..." />
                     </div>
                 ) : error || !analytics ? (
                     <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-sm">

@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import RouteViewer from '../components/RouteViewer';
+import ShareActivityCard from '../components/ShareActivityCard';
+import StrideLoader from '../components/ui/StrideLoader';
 import api from '../services/api';
-import type { ActivityHistory as ActivityType } from '../types';
+import type { ActivityHistory as ActivityType, RoutePoint } from '../types';
 import { 
     Footprints, 
     Flame, 
@@ -11,10 +14,13 @@ import {
     Dumbbell, 
     Calendar, 
     Clock, 
-    X,
+    X, 
+    Plus, 
     Filter,
-    Plus,
-    Activity as ActivityIcon
+    Activity as ActivityIcon,
+    MapPin,
+    Share2,
+    BarChart3
 } from 'lucide-react';
 
 const formatSeconds = (sec?: number): string => {
@@ -45,6 +51,33 @@ const ActivityHistory: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [selectedSport, setSelectedSport] = useState<string>('ALL');
     const [selectedActivity, setSelectedActivity] = useState<ActivityType | null>(null);
+
+    // Modal Sub-Tabs & Route Telemetry State
+    const [modalTab, setModalTab] = useState<'OVERVIEW' | 'ROUTE' | 'SHARE'>('OVERVIEW');
+    const [routePoints, setRoutePoints] = useState<RoutePoint[]>([]);
+    const [routeLoading, setRouteLoading] = useState<boolean>(false);
+    const [isPrivacyRoute, setIsPrivacyRoute] = useState<boolean>(true);
+
+    const loadActivityRoute = async (actId: string, privacy: boolean = true) => {
+        setRouteLoading(true);
+        try {
+            const res = await api.get(`/activities/${actId}/route?privacy=${privacy}`);
+            setRoutePoints(res.data?.points || []);
+        } catch (err) {
+            console.warn('No route points for activity', actId);
+            setRoutePoints([]);
+        } finally {
+            setRouteLoading(false);
+        }
+    };
+
+    const handleOpenActivity = (act: ActivityType) => {
+        setSelectedActivity(act);
+        setModalTab('OVERVIEW');
+        if (act.activityId) {
+            loadActivityRoute(act.activityId, isPrivacyRoute);
+        }
+    };
 
     useEffect(() => {
         const fetchHistory = async () => {
@@ -184,7 +217,7 @@ const ActivityHistory: React.FC = () => {
                             return (
                                 <div
                                     key={act.activityId}
-                                    onClick={() => setSelectedActivity(act)}
+                                    onClick={() => handleOpenActivity(act)}
                                     className="glass-card p-4 sm:p-5 hover:border-[var(--accent)]/50 transition-all cursor-pointer space-y-3 group"
                                 >
                                     <div className="flex items-center justify-between">
@@ -252,10 +285,10 @@ const ActivityHistory: React.FC = () => {
                     </div>
                 )}
 
-                {/* Activity Detail Modal */}
+                {/* Activity Detail Modal with Tabs: Overview, Route & Replay, Share Card */}
                 {selectedActivity && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-                        <div className="relative w-full max-w-lg glass-card p-6 sm:p-8 space-y-6 animate-in zoom-in-95 duration-200">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200 overflow-y-auto">
+                        <div className="relative w-full max-w-2xl glass-card p-6 sm:p-8 space-y-6 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto my-auto">
                             <button
                                 onClick={() => setSelectedActivity(null)}
                                 className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
@@ -280,59 +313,142 @@ const ActivityHistory: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* Metrics Grid */}
-                            <div className="grid grid-cols-3 gap-3 text-center">
-                                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10">
-                                    <p className="text-[10px] font-bold text-white/50 uppercase">Distance</p>
-                                    <p className="text-lg font-mono font-bold text-white mt-1">
-                                        {selectedActivity.distanceKm ? `${selectedActivity.distanceKm.toFixed(2)} km` : '--'}
-                                    </p>
-                                </div>
-                                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10">
-                                    <p className="text-[10px] font-bold text-white/50 uppercase">Duration</p>
-                                    <p className="text-lg font-mono font-bold text-white mt-1">
-                                        {formatSeconds(selectedActivity.totalDurationSeconds || ((selectedActivity.durationMinutes || 0) * 60 + (selectedActivity.durationSeconds || 0)))}
-                                    </p>
-                                </div>
-                                <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10">
-                                    <p className="text-[10px] font-bold text-white/50 uppercase">Calories</p>
-                                    <p className="text-lg font-mono font-bold text-amber-400 mt-1">
-                                        {selectedActivity.calories ? `${selectedActivity.calories} kcal` : '--'}
-                                    </p>
-                                </div>
+                            {/* Modal Tab Headers */}
+                            <div className="flex items-center space-x-2 border-b border-white/10 pb-3 text-xs font-bold">
+                                <button
+                                    onClick={() => setModalTab('OVERVIEW')}
+                                    className={`px-3.5 py-2 rounded-xl transition-all flex items-center space-x-1.5 ${
+                                        modalTab === 'OVERVIEW' 
+                                            ? 'bg-[var(--accent)] text-white shadow-md' 
+                                            : 'bg-white/5 hover:bg-white/10 text-white/60'
+                                    }`}
+                                >
+                                    <BarChart3 className="w-3.5 h-3.5" />
+                                    <span>Overview</span>
+                                </button>
+
+                                <button
+                                    onClick={() => setModalTab('ROUTE')}
+                                    className={`px-3.5 py-2 rounded-xl transition-all flex items-center space-x-1.5 ${
+                                        modalTab === 'ROUTE' 
+                                            ? 'bg-[var(--accent)] text-white shadow-md' 
+                                            : 'bg-white/5 hover:bg-white/10 text-white/60'
+                                    }`}
+                                >
+                                    <MapPin className="w-3.5 h-3.5" />
+                                    <span>Route & Replay ({routePoints.length})</span>
+                                </button>
+
+                                <button
+                                    onClick={() => setModalTab('SHARE')}
+                                    className={`px-3.5 py-2 rounded-xl transition-all flex items-center space-x-1.5 ${
+                                        modalTab === 'SHARE' 
+                                            ? 'bg-[var(--accent)] text-white shadow-md' 
+                                            : 'bg-white/5 hover:bg-white/10 text-white/60'
+                                    }`}
+                                >
+                                    <Share2 className="w-3.5 h-3.5" />
+                                    <span>Share Card</span>
+                                </button>
                             </div>
 
-                            {/* Segmentation breakdown if available */}
-                            {((selectedActivity.walkingDurationSeconds || 0) > 0 || (selectedActivity.joggingDurationSeconds || 0) > 0 || (selectedActivity.runningDurationSeconds || 0) > 0) && (
-                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
-                                    <h4 className="text-xs font-bold text-white uppercase tracking-wider">Dynamic Segmentation Breakdown</h4>
-                                    <div className="space-y-2 text-xs">
-                                        {selectedActivity.walkingDurationSeconds ? (
-                                            <div className="flex justify-between items-center">
-                                                <span className="flex items-center gap-1.5 text-emerald-400">
-                                                    <Footprints className="w-4 h-4" /> Walking
-                                                </span>
-                                                <span className="font-mono text-white font-bold">{formatSeconds(selectedActivity.walkingDurationSeconds)}</span>
-                                            </div>
-                                        ) : null}
-                                        {selectedActivity.joggingDurationSeconds ? (
-                                            <div className="flex justify-between items-center">
-                                                <span className="flex items-center gap-1.5 text-amber-400">
-                                                    <Flame className="w-4 h-4" /> Jogging
-                                                </span>
-                                                <span className="font-mono text-white font-bold">{formatSeconds(selectedActivity.joggingDurationSeconds)}</span>
-                                            </div>
-                                        ) : null}
-                                        {selectedActivity.runningDurationSeconds ? (
-                                            <div className="flex justify-between items-center">
-                                                <span className="flex items-center gap-1.5 text-rose-400">
-                                                    <Flame className="w-4 h-4" /> Running
-                                                </span>
-                                                <span className="font-mono text-white font-bold">{formatSeconds(selectedActivity.runningDurationSeconds)}</span>
-                                            </div>
-                                        ) : null}
+                            {/* Tab 1: Overview */}
+                            {modalTab === 'OVERVIEW' && (
+                                <div className="space-y-6">
+                                    {/* Metrics Grid */}
+                                    <div className="grid grid-cols-3 gap-3 text-center">
+                                        <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                                            <p className="text-[10px] font-bold text-white/50 uppercase">Distance</p>
+                                            <p className="text-lg font-mono font-bold text-white mt-1">
+                                                {selectedActivity.distanceKm ? `${selectedActivity.distanceKm.toFixed(2)} km` : '--'}
+                                            </p>
+                                        </div>
+                                        <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                                            <p className="text-[10px] font-bold text-white/50 uppercase">Duration</p>
+                                            <p className="text-lg font-mono font-bold text-white mt-1">
+                                                {formatSeconds(selectedActivity.totalDurationSeconds || ((selectedActivity.durationMinutes || 0) * 60 + (selectedActivity.durationSeconds || 0)))}
+                                            </p>
+                                        </div>
+                                        <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10">
+                                            <p className="text-[10px] font-bold text-white/50 uppercase">Calories</p>
+                                            <p className="text-lg font-mono font-bold text-amber-400 mt-1">
+                                                {selectedActivity.calories ? `${selectedActivity.calories} kcal` : '--'}
+                                            </p>
+                                        </div>
                                     </div>
+
+                                    {/* Segmentation breakdown if available */}
+                                    {((selectedActivity.walkingDurationSeconds || 0) > 0 || (selectedActivity.joggingDurationSeconds || 0) > 0 || (selectedActivity.runningDurationSeconds || 0) > 0 || (selectedActivity.cyclingDurationSeconds || 0) > 0) && (
+                                        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-3">
+                                            <h4 className="text-xs font-bold text-white uppercase tracking-wider">Dynamic Segmentation Breakdown</h4>
+                                            <div className="space-y-2 text-xs">
+                                                {selectedActivity.walkingDurationSeconds ? (
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="flex items-center gap-1.5 text-emerald-400">
+                                                            <Footprints className="w-4 h-4" /> Walking
+                                                        </span>
+                                                        <span className="font-mono text-white font-bold">{formatSeconds(selectedActivity.walkingDurationSeconds)}</span>
+                                                    </div>
+                                                ) : null}
+                                                {selectedActivity.joggingDurationSeconds ? (
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="flex items-center gap-1.5 text-amber-400">
+                                                            <Flame className="w-4 h-4" /> Jogging
+                                                        </span>
+                                                        <span className="font-mono text-white font-bold">{formatSeconds(selectedActivity.joggingDurationSeconds)}</span>
+                                                    </div>
+                                                ) : null}
+                                                {selectedActivity.runningDurationSeconds ? (
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="flex items-center gap-1.5 text-rose-400">
+                                                            <Flame className="w-4 h-4" /> Running
+                                                        </span>
+                                                        <span className="font-mono text-white font-bold">{formatSeconds(selectedActivity.runningDurationSeconds)}</span>
+                                                    </div>
+                                                ) : null}
+                                                {selectedActivity.cyclingDurationSeconds ? (
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="flex items-center gap-1.5 text-blue-400">
+                                                            <Bike className="w-4 h-4" /> Cycling
+                                                        </span>
+                                                        <span className="font-mono text-white font-bold">{formatSeconds(selectedActivity.cyclingDurationSeconds)}</span>
+                                                    </div>
+                                                ) : null}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
+                            )}
+
+                            {/* Tab 2: GPS Route & Replay */}
+                            {modalTab === 'ROUTE' && (
+                                <div className="space-y-3">
+                                    {routeLoading ? (
+                                        <div className="py-12">
+                                            <StrideLoader size="md" text="Loading GPS route coordinates..." />
+                                        </div>
+                                    ) : (
+                                        <RouteViewer
+                                            points={routePoints}
+                                            sport={selectedActivity.sport}
+                                            totalDistanceKm={selectedActivity.distanceKm}
+                                            totalDurationSeconds={selectedActivity.totalDurationSeconds || ((selectedActivity.durationMinutes || 0) * 60 + (selectedActivity.durationSeconds || 0))}
+                                        />
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Tab 3: Share Card */}
+                            {modalTab === 'SHARE' && (
+                                <ShareActivityCard
+                                    activity={selectedActivity}
+                                    routePoints={routePoints}
+                                    privacyTrimmed={isPrivacyRoute}
+                                    onTogglePrivacy={(isPrivacy) => {
+                                        setIsPrivacyRoute(isPrivacy);
+                                        if (selectedActivity.activityId) loadActivityRoute(selectedActivity.activityId, isPrivacy);
+                                    }}
+                                />
                             )}
 
                             <button

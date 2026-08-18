@@ -41,6 +41,7 @@ public class ActivityRequest {
 
     private java.time.Instant startedAt;
     private java.time.Instant endedAt;
+    private java.util.List<RoutePointDto> routePoints;
 
     // Getters and Setters
     public SportType getSport() { return sport; }
@@ -81,4 +82,7 @@ public class ActivityRequest {
 
     public java.time.Instant getEndedAt() { return endedAt; }
     public void setEndedAt(java.time.Instant endedAt) { this.endedAt = endedAt; }
+
+    public java.util.List<RoutePointDto> getRoutePoints() { return routePoints; }
+    public void setRoutePoints(java.util.List<RoutePointDto> routePoints) { this.routePoints = routePoints; }
 }

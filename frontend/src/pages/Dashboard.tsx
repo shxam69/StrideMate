@@ -11,6 +11,8 @@ import LevelCard from '../components/LevelCard';
 import DailyQuestsCard from '../components/DailyQuestsCard';
 import DailyEnergyWidget from '../components/DailyEnergyWidget';
 import EnvironmentCard from '../components/EnvironmentCard';
+import SmartRunningWidget from '../components/SmartRunningWidget';
+import StrideLoader from '../components/ui/StrideLoader';
 import { Trophy, Activity, Medal, Heart, ArrowRight, Plus, BarChart3, ShieldAlert } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -53,7 +55,7 @@ const Dashboard: React.FC = () => {
     if (loading) {
         return (
             <div className="min-h-screen flex justify-center items-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[var(--accent)]"></div>
+                <StrideLoader size="lg" text="Loading StrideMate Dashboard..." />
             </div>
         );
     }
@@ -122,8 +124,11 @@ const Dashboard: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Phase 6: Environment Intelligence Outdoor Conditions Widget */}
-                <EnvironmentCard />
+                {/* Smart Map & Outdoor Environment Intelligence Widgets */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                    <SmartRunningWidget />
+                    <EnvironmentCard />
+                </div>
 
                 {/* Gamification Top Row (Level Card + Streak Widget) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">

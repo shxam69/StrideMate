@@ -207,7 +207,7 @@ public class EnvironmentAndSafetyTest {
 
         SosResponseDto dto = objectMapper.readValue(sosRes.body(), SosResponseDto.class);
         assertNotNull(dto.getEventId());
-        assertTrue("SENT".equals(dto.getStatus()) || "MOCK_SENT".equals(dto.getStatus()) || "PARTIALLY_SENT".equals(dto.getStatus()));
+        assertTrue("SENT".equals(dto.getStatus()) || "ACCEPTED".equals(dto.getStatus()) || "MOCK_SENT".equals(dto.getStatus()) || "PARTIALLY_SENT".equals(dto.getStatus()));
         assertTrue(dto.getLocationUrl().contains("37.774900,-122.419400"));
         assertEquals("Kyle Reese", dto.getContactName());
         assertEquals("+15551234567", dto.getContactPhone());

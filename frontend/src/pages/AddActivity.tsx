@@ -96,6 +96,7 @@ const AddActivity: React.FC = () => {
                 cyclingDurationSeconds: tracker.breakdown.cyclingSeconds,
                 startedAt: tracker.startedAt || new Date().toISOString(),
                 endedAt: tracker.endedAt || new Date().toISOString(),
+                routePoints: tracker.routePoints.length > 0 ? tracker.routePoints : undefined,
             };
 
             const res = await api.post('/activities', payload);
@@ -315,10 +316,10 @@ const AddActivity: React.FC = () => {
                                                 <Lock className="w-3.5 h-3.5" /> Note on Mobile Chrome (LAN HTTP):
                                             </p>
                                             <p className="text-white/70">
-                                                Chrome on Android disables Geolocation on plain IP addresses (<code className="text-amber-300">192.168.x.x</code>) because it is not an HTTPS origin.
+                                                Chrome on Android disables Geolocation on plain HTTP LAN IPs because it is not an HTTPS origin.
                                             </p>
                                             <p className="text-white/70">
-                                                👉 To test real GPS on phone: open <code className="text-amber-300">chrome://flags/#unsafely-treat-insecure-origin-as-secure</code> on phone, add <code className="text-amber-300">http://192.168.1.6:5173</code>, enable and relaunch Chrome; or use <b>Simulator Mode</b> below.
+                                                👉 To test real GPS on phone: open <code className="text-amber-300">chrome://flags/#unsafely-treat-insecure-origin-as-secure</code> on phone, add <code className="text-amber-300">{window.location.origin}</code>, enable and relaunch Chrome; or use <b>Simulator Mode</b> below.
                                             </p>
                                         </div>
                                     )}

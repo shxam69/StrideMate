@@ -11,9 +11,13 @@ public class EmergencyEventDto {
     private UUID activityId;
     private Instant triggeredAt;
     private String status;
+    private String provider;
     private String smsStatus;
     private String whatsappStatus;
     private String callStatus;
+    private String smsSid;
+    private String smsErrorCode;
+    private String smsErrorMessage;
     private String message;
     private Instant resolvedAt;
 
@@ -40,6 +44,9 @@ public class EmergencyEventDto {
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
+    public String getProvider() { return provider; }
+    public void setProvider(String provider) { this.provider = provider; }
+
     public String getSmsStatus() { return smsStatus; }
     public void setSmsStatus(String smsStatus) { this.smsStatus = smsStatus; }
 
@@ -48,6 +55,15 @@ public class EmergencyEventDto {
 
     public String getCallStatus() { return callStatus; }
     public void setCallStatus(String callStatus) { this.callStatus = callStatus; }
+
+    public String getSmsSid() { return smsSid; }
+    public void setSmsSid(String smsSid) { this.smsSid = smsSid; }
+
+    public String getSmsErrorCode() { return smsErrorCode; }
+    public void setSmsErrorCode(String smsErrorCode) { this.smsErrorCode = smsErrorCode; }
+
+    public String getSmsErrorMessage() { return smsErrorMessage; }
+    public void setSmsErrorMessage(String smsErrorMessage) { this.smsErrorMessage = smsErrorMessage; }
 
     public String getMessage() { return message; }
     public void setMessage(String message) { this.message = message; }

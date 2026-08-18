@@ -252,11 +252,15 @@ export interface SosRequest {
 
 export interface SosResponse {
     eventId: string;
-    status: 'SENT' | 'PARTIALLY_SENT' | 'FAILED';
+    status: string;
+    provider?: string;
     locationUrl: string;
-    sms: 'SENT' | 'FAILED' | 'SKIPPED' | 'MOCK_SENT';
-    whatsapp: 'SENT' | 'FAILED' | 'SKIPPED' | 'MOCK_SENT';
-    call: 'SENT' | 'FAILED' | 'SKIPPED' | 'MOCK_SENT';
+    sms: string;
+    whatsapp: string;
+    call: string;
+    smsSid?: string;
+    smsErrorCode?: string;
+    smsErrorMessage?: string;
     message: string;
     triggeredAt: string;
     contactName?: string;
@@ -270,11 +274,74 @@ export interface EmergencyEvent {
     accuracyMeters?: number;
     activityId?: string;
     triggeredAt: string;
-    status: 'TRIGGERED' | 'RESOLVED' | 'FAILED';
+    status: string;
+    provider?: string;
     smsStatus?: string;
     whatsappStatus?: string;
     callStatus?: string;
+    smsSid?: string;
+    smsErrorCode?: string;
+    smsErrorMessage?: string;
     message?: string;
     resolvedAt?: string;
 }
+
+// Final Milestone: Smart Running Map & Traffic-Aware Types
+export interface TrafficInfo {
+    congestionLevel: 'LOW' | 'MODERATE' | 'HEAVY' | 'UNAVAILABLE';
+    congestionScore: number;
+    description: string;
+    provider: string;
+    available: boolean;
+}
+
+export interface SmartRunningSpot {
+    name: string;
+    latitude: number;
+    longitude: number;
+    distanceKm: number;
+    type: string;
+    osmId?: number;
+    suitabilityScore: number;
+    suitabilityTier: 'RECOMMENDED' | 'MODERATE' | 'AVOID';
+    mapsUrl: string;
+    routeUrl: string;
+    trafficInfo?: TrafficInfo;
+    highlights: string[];
+    cautions: string[];
+}
+
+export interface SmartMapResponse {
+    userLocation: LocationInfo;
+    overallCondition: 'EXCELLENT' | 'GOOD' | 'MODERATE' | 'POOR' | 'AVOID';
+    overallRunningScore: number;
+    summaryRecommendation: string;
+    bestPlace?: SmartRunningSpot | null;
+    nearbySpots: SmartRunningSpot[];
+    weather?: WeatherInfo;
+    airQuality?: AirQualityInfo;
+    traffic?: TrafficInfo;
+}
+
+// Sprint: GPS Route Points & Replay Types
+export interface RoutePoint {
+    latitude: number;
+    longitude: number;
+    accuracy?: number;
+    speed?: number;
+    recordedAt?: string;
+}
+
+export interface ActivityRouteResponse {
+    activityId: string;
+    sport: string;
+    distanceKm: number;
+    durationSeconds: number;
+    calories?: number;
+    scorePoints?: number;
+    privacyTrimmed: boolean;
+    points: RoutePoint[];
+}
+
+
 

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Navbar from '../components/Navbar';
+import StrideLoader from '../components/ui/StrideLoader';
 import api from '../services/api';
 import type { EmergencyContact, EmergencyEvent, SosResponse } from '../types';
 import { 
@@ -18,7 +19,8 @@ import {
     X, 
     Radio, 
     History,
-    Check
+    Navigation,
+    Clock
 } from 'lucide-react';
 
 const RELATIONSHIPS = [
@@ -36,8 +38,14 @@ const Safety: React.FC = () => {
     // SOS State
     const [showConfirmModal, setShowConfirmModal] = useState<boolean>(false);
     const [isTriggeringSos, setIsTriggeringSos] = useState<boolean>(false);
+    const [gpsFeedback, setGpsFeedback] = useState<string | null>(null);
     const [sosResult, setSosResult] = useState<SosResponse | null>(null);
     const [sosError, setSosError] = useState<string | null>(null);
+
+    // Hold-to-Confirm State
+    const [holdProgress, setHoldProgress] = useState<number>(0);
+    const holdTimerRef = useRef<number | null>(null);
+    const holdStartTimeRef = useRef<number>(0);
 
     // Emergency Contacts State
     const [contacts, setContacts] = useState<EmergencyContact[]>([]);
@@ -58,10 +66,27 @@ const Safety: React.FC = () => {
     const [loadingEvents, setLoadingEvents] = useState<boolean>(true);
     const [resolvingId, setResolvingId] = useState<string | null>(null);
 
+    // Provider Mode State
+    const [providerInfo, setProviderInfo] = useState<{ mode: string; isReal: boolean; provider: string }>({
+        mode: 'mock',
+        isReal: false,
+        provider: 'SPRINGEDGE'
+    });
+
     useEffect(() => {
         fetchContacts();
         fetchEvents();
+        fetchProviderMode();
     }, []);
+
+    const fetchProviderMode = async () => {
+        try {
+            const res = await api.get('/safety/mode');
+            setProviderInfo(res.data);
+        } catch (err) {
+            console.error('Failed to fetch safety provider mode', err);
+        }
+    };
 
     const fetchContacts = async () => {
         try {
@@ -79,27 +104,58 @@ const Safety: React.FC = () => {
             const res = await api.get('/safety/events');
             setEvents(res.data);
         } catch (err) {
-            console.error('Failed to fetch safety events', err);
+            console.error('Failed to fetch emergency events', err);
         } finally {
             setLoadingEvents(false);
         }
     };
 
-    const handleTriggerSos = () => {
-        setSosError(null);
-        setSosResult(null);
-
+    // Hold-to-Confirm Mechanics
+    const startHold = () => {
         if (contacts.length === 0) {
-            setSosError('You must configure at least one emergency contact before sending an SOS.');
+            setSosError('You must configure at least one emergency contact before triggering SOS.');
             return;
         }
+        setSosError(null);
+        setHoldProgress(0);
+        holdStartTimeRef.current = Date.now();
 
+        const interval = window.setInterval(() => {
+            const elapsed = Date.now() - holdStartTimeRef.current;
+            const progress = Math.min(100, Math.round((elapsed / 1500) * 100));
+            setHoldProgress(progress);
+
+            if (progress >= 100) {
+                window.clearInterval(interval);
+                holdTimerRef.current = null;
+                setHoldProgress(0);
+                executeSosDispatch();
+            }
+        }, 30);
+
+        holdTimerRef.current = interval;
+    };
+
+    const cancelHold = () => {
+        if (holdTimerRef.current !== null) {
+            window.clearInterval(holdTimerRef.current);
+            holdTimerRef.current = null;
+        }
+        setHoldProgress(0);
+    };
+
+    const handleClickSos = () => {
+        if (contacts.length === 0) {
+            setSosError('You must configure at least one emergency contact before triggering SOS.');
+            return;
+        }
         setShowConfirmModal(true);
     };
 
     const executeSosDispatch = () => {
         setShowConfirmModal(false);
         setIsTriggeringSos(true);
+        setGpsFeedback('Acquiring high-accuracy GPS coordinates...');
         setSosError(null);
 
         if (!('geolocation' in navigator)) {
@@ -110,11 +166,17 @@ const Safety: React.FC = () => {
 
         navigator.geolocation.getCurrentPosition(
             async (pos) => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                const acc = Math.round(pos.coords.accuracy);
+
+                setGpsFeedback(`Location locked: ${lat.toFixed(4)}, ${lng.toFixed(4)} (±${acc}m). Sending emergency alerts...`);
+
                 try {
                     const res = await api.post('/safety/sos', {
-                        latitude: pos.coords.latitude,
-                        longitude: pos.coords.longitude,
-                        accuracyMeters: pos.coords.accuracy,
+                        latitude: lat,
+                        longitude: lng,
+                        accuracyMeters: acc,
                         clientRequestId: `sos-${Date.now()}`
                     });
 
@@ -127,9 +189,9 @@ const Safety: React.FC = () => {
                     setIsTriggeringSos(false);
                 }
             },
-            () => {
+            (geoErr) => {
                 setIsTriggeringSos(false);
-                setSosError('Unable to acquire GPS location. Please allow location permissions to send SOS.');
+                setSosError(`GPS acquisition failed (${geoErr.message}). Please ensure location permissions are granted.`);
             },
             { enableHighAccuracy: true, timeout: 10000 }
         );
@@ -193,7 +255,8 @@ const Safety: React.FC = () => {
             setShowContactModal(false);
             await fetchContacts();
         } catch (err: any) {
-            setModalError(err.response?.data?.message || 'Failed to save contact.');
+            console.error('Save contact error', err);
+            setModalError(err.response?.data?.message || 'Failed to save emergency contact. Verify the phone number.');
         } finally {
             setModalLoading(false);
         }
@@ -206,6 +269,79 @@ const Safety: React.FC = () => {
             await fetchContacts();
         } catch (err: any) {
             alert(err.response?.data?.message || 'Failed to delete emergency contact.');
+        }
+    };
+
+    // Helper for truthful status badges
+    const renderStatusBadge = (status?: string) => {
+        switch (status) {
+            case 'DELIVERED':
+                return (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-300">
+                        Delivered
+                    </span>
+                );
+            case 'SENT':
+                return (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-300">
+                        Sent
+                    </span>
+                );
+            case 'ACCEPTED':
+            case 'REQUESTED':
+                return (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 border border-cyan-500/40 text-cyan-300">
+                        Accepted
+                    </span>
+                );
+            case 'INITIATED':
+                return (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 border border-blue-500/40 text-blue-300">
+                        Call Initiated
+                    </span>
+                );
+            case 'RINGING':
+                return (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 border border-blue-500/40 text-blue-300">
+                        Ringing
+                    </span>
+                );
+            case 'COMPLETED':
+                return (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 border border-emerald-500/40 text-emerald-300">
+                        Completed
+                    </span>
+                );
+            case 'MOCK_SENT':
+                return (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 border border-amber-500/40 text-amber-300">
+                        Simulated Delivery
+                    </span>
+                );
+            case 'UNAVAILABLE':
+                return (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-500/20 border border-gray-500/40 text-gray-300">
+                        Provider Offline
+                    </span>
+                );
+            case 'SKIPPED':
+                return (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/20 border border-slate-500/40 text-slate-300">
+                        Skipped
+                    </span>
+                );
+            case 'FAILED':
+                return (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 border border-rose-500/40 text-rose-300">
+                        Delivery Failed
+                    </span>
+                );
+            default:
+                return (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/10 text-white/50">
+                        {status || 'Pending'}
+                    </span>
+                );
         }
     };
 
@@ -225,9 +361,15 @@ const Safety: React.FC = () => {
                                 <h1 className="text-xl sm:text-3xl font-extrabold text-[var(--text)] tracking-tight">
                                     Safety & SOS System
                                 </h1>
-                                <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-300 border border-rose-500/30">
-                                    Emergency Telemetry
-                                </span>
+                                {providerInfo.isReal ? (
+                                    <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                                        LIVE DELIVERY ({providerInfo.provider})
+                                    </span>
+                                ) : (
+                                    <span className="text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                                        SIMULATED DELIVERY (DEV MOCK)
+                                    </span>
+                                )}
                             </div>
                             <p className="text-[var(--text-muted)] text-xs sm:text-sm mt-0.5">
                                 Instantly broadcast your real-time GPS location via SMS, WhatsApp, and Voice Call to your designated safety network.
@@ -248,22 +390,53 @@ const Safety: React.FC = () => {
                                 Need Immediate Assistance?
                             </h2>
                             <p className="text-xs sm:text-sm text-[var(--text-muted)] max-w-xl">
-                                Activating SOS will immediately capture your precise coordinates and dispatch priority alerts to your primary emergency contact via SMS, WhatsApp, and an automated voice call.
+                                Hold the SOS button for 1.5 seconds (or tap and confirm) to lock your GPS coordinates and trigger priority SMS, WhatsApp, and Voice emergency alerts.
                             </p>
                         </div>
 
-                        <div className="flex flex-col items-center gap-3 shrink-0">
+                        {/* Hold-to-Confirm Interactive Button */}
+                        <div className="flex flex-col items-center gap-3 shrink-0 relative">
+                            {/* Radial Progress Glow Indicator */}
+                            {holdProgress > 0 && (
+                                <div className="absolute inset-[-8px] rounded-full border-4 border-rose-400 animate-pulse pointer-events-none" style={{ opacity: holdProgress / 100 }} />
+                            )}
+
                             <button
-                                onClick={handleTriggerSos}
+                                onMouseDown={startHold}
+                                onMouseUp={cancelHold}
+                                onMouseLeave={cancelHold}
+                                onTouchStart={startHold}
+                                onTouchEnd={cancelHold}
+                                onClick={handleClickSos}
                                 disabled={isTriggeringSos}
-                                className="w-36 h-36 sm:w-44 sm:h-44 rounded-full bg-gradient-to-tr from-rose-600 to-red-500 hover:from-rose-500 hover:to-red-400 text-white font-black text-xl sm:text-2xl tracking-wider shadow-[0_0_40px_rgba(244,63,94,0.6)] hover:shadow-[0_0_60px_rgba(244,63,94,0.9)] hover:scale-105 active:scale-95 transition-all flex flex-col items-center justify-center space-y-1 border-4 border-white/20 disabled:opacity-50 group cursor-pointer"
+                                className="relative w-36 h-36 sm:w-44 sm:h-44 rounded-full bg-gradient-to-tr from-rose-600 to-red-500 hover:from-rose-500 hover:to-red-400 text-white font-black text-xl sm:text-2xl tracking-wider shadow-[0_0_40px_rgba(244,63,94,0.6)] hover:shadow-[0_0_60px_rgba(244,63,94,0.9)] hover:scale-105 active:scale-95 transition-all flex flex-col items-center justify-center space-y-1 border-4 border-white/20 disabled:opacity-50 group cursor-pointer select-none overflow-hidden"
                             >
-                                <ShieldAlert className="w-8 h-8 sm:w-10 sm:h-10 group-hover:scale-110 transition-transform" />
-                                <span>{isTriggeringSos ? 'SENDING...' : 'SOS'}</span>
-                                <span className="text-[10px] font-semibold text-white/80 uppercase">Hold / Tap</span>
+                                {/* Progress Fill Overlay */}
+                                {holdProgress > 0 && (
+                                    <div 
+                                        className="absolute inset-0 bg-red-700/80 transition-all duration-75 origin-bottom"
+                                        style={{ transform: `scaleY(${holdProgress / 100})` }}
+                                    />
+                                )}
+
+                                <div className="relative z-10 flex flex-col items-center justify-center space-y-1">
+                                    <ShieldAlert className="w-8 h-8 sm:w-10 sm:h-10 group-hover:scale-110 transition-transform" />
+                                    <span>{isTriggeringSos ? 'SENDING...' : 'SOS'}</span>
+                                    <span className="text-[10px] font-semibold text-white/80 uppercase">
+                                        {holdProgress > 0 ? `HOLDING (${holdProgress}%)` : 'HOLD 1.5s'}
+                                    </span>
+                                </div>
                             </button>
                         </div>
                     </div>
+
+                    {/* Step-by-Step GPS Feedback Indicator */}
+                    {isTriggeringSos && (
+                        <div className="mt-6 p-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center space-x-3 text-xs font-bold text-[var(--text)]">
+                            <Navigation className="w-4 h-4 text-cyan-400 animate-spin" />
+                            <span>{gpsFeedback}</span>
+                        </div>
+                    )}
 
                     {/* SOS Error Banner */}
                     {sosError && (
@@ -279,344 +452,361 @@ const Safety: React.FC = () => {
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-2 text-emerald-400 font-bold text-sm sm:text-base">
                                     <CheckCircle2 className="w-5 h-5" />
-                                    <span>🚨 SOS ALERT DISPATCHED SUCCESSFULLY</span>
+                                    <span>
+                                        {sosResult.status === 'DELIVERED' 
+                                            ? 'Emergency Alert Delivered' 
+                                            : sosResult.status === 'FAILED'
+                                            ? 'Emergency Alert Delivery Failed'
+                                            : 'Emergency Alert Requested & Dispatched'}
+                                    </span>
                                 </div>
-                                <span className="text-xs text-white/60">
-                                    Event #{sosResult.eventId.substring(0, 8)}
-                                </span>
+                                <button
+                                    onClick={() => setSosResult(null)}
+                                    className="text-xs text-emerald-400/80 hover:text-emerald-400 font-semibold"
+                                >
+                                    Dismiss
+                                </button>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
-                                    <div className="flex items-center space-x-2 text-xs">
+                            <p className="text-xs text-[var(--text-muted)]">
+                                Priority notification was dispatched for your designated primary contact ({sosResult.contactName || 'Primary Contact'} - {sosResult.contactPhone || 'Registered Phone'}):
+                            </p>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+                                    <div className="flex items-center space-x-2 text-[var(--text)]">
                                         <MessageSquare className="w-4 h-4 text-emerald-400" />
                                         <span>SMS Alert</span>
                                     </div>
-                                    <span className="text-xs font-bold text-emerald-400 uppercase">{sosResult.sms}</span>
+                                    {renderStatusBadge(sosResult.sms)}
                                 </div>
 
-                                <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
-                                    <div className="flex items-center space-x-2 text-xs">
-                                        <Send className="w-4 h-4 text-emerald-400" />
-                                        <span>WhatsApp Alert</span>
+                                <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+                                    <div className="flex items-center space-x-2 text-[var(--text)]">
+                                        <Send className="w-4 h-4 text-green-400" />
+                                        <span>WhatsApp</span>
                                     </div>
-                                    <span className="text-xs font-bold text-emerald-400 uppercase">{sosResult.whatsapp}</span>
+                                    {renderStatusBadge(sosResult.whatsapp)}
                                 </div>
 
-                                <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
-                                    <div className="flex items-center space-x-2 text-xs">
-                                        <PhoneCall className="w-4 h-4 text-emerald-400" />
-                                        <span>Emergency Voice Call</span>
+                                <div className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between">
+                                    <div className="flex items-center space-x-2 text-[var(--text)]">
+                                        <PhoneCall className="w-4 h-4 text-rose-400" />
+                                        <span>Voice Call</span>
                                     </div>
-                                    <span className="text-xs font-bold text-emerald-400 uppercase">{sosResult.call}</span>
+                                    {renderStatusBadge(sosResult.call)}
                                 </div>
                             </div>
 
-                            <div className="pt-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs border-t border-white/10">
-                                <div className="flex items-center space-x-2 text-[var(--text-muted)]">
-                                    <MapPin className="w-4 h-4 text-rose-400" />
-                                    <span>Location shared:</span>
+                            {sosResult.locationUrl && (
+                                <div className="pt-2 flex items-center justify-between text-xs border-t border-emerald-500/20">
+                                    <div className="flex items-center space-x-1.5 text-emerald-300 font-mono">
+                                        <MapPin className="w-3.5 h-3.5" />
+                                        <span>Pinned GPS Coordinates</span>
+                                    </div>
                                     <a
                                         href={sosResult.locationUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-[var(--accent)] font-semibold hover:underline inline-flex items-center gap-1"
+                                        className="inline-flex items-center space-x-1 text-emerald-400 hover:underline font-bold"
                                     >
-                                        <span>View Map Pin</span>
+                                        <span>Open Maps Link</span>
                                         <ExternalLink className="w-3 h-3" />
                                     </a>
                                 </div>
-                                <span className="text-[var(--text-muted)]">
-                                    Contact notified: {sosResult.contactName} ({sosResult.contactPhone})
-                                </span>
-                            </div>
+                            )}
                         </div>
                     )}
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
-                    {/* Left Column: Emergency Contacts Network (7 Cols) */}
-                    <div className="lg:col-span-7 space-y-6">
-                        <div className="p-6 sm:p-8 rounded-3xl glass-card border border-white/10 space-y-5">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3">
-                                    <div className="p-2.5 rounded-2xl bg-white/5 border border-white/10 text-rose-400">
-                                        <Heart className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-base sm:text-lg font-bold text-[var(--text)]">Emergency Contacts Network</h2>
-                                        <p className="text-xs text-[var(--text-muted)]">Designated contacts who receive instant SOS dispatches.</p>
-                                    </div>
-                                </div>
-
-                                <button
-                                    onClick={handleOpenAddModal}
-                                    className="p-2 sm:p-2.5 rounded-xl bg-[var(--accent)]/20 border border-[var(--accent)]/40 hover:bg-[var(--accent)]/30 text-[var(--accent)] transition-all"
-                                    title="Add Contact"
-                                >
-                                    <Plus className="w-5 h-5" />
-                                </button>
-                            </div>
-
-                            {contacts.length === 0 && !loadingContacts && (
-                                <div className="p-6 rounded-2xl bg-white/5 border border-dashed border-white/15 text-center space-y-3">
-                                    <ShieldAlert className="w-8 h-8 text-amber-400 mx-auto" />
-                                    <p className="text-xs text-[var(--text)] font-semibold">No emergency contacts registered yet.</p>
-                                    <button
-                                        onClick={handleOpenAddModal}
-                                        className="px-4 py-2 rounded-xl bg-[var(--accent)]/20 text-[var(--accent)] text-xs font-bold"
-                                    >
-                                        Add Contact
-                                    </button>
-                                </div>
-                            )}
-
-                            <div className="space-y-3">
-                                {contacts.map((c) => (
-                                    <div
-                                        key={c.id}
-                                        className={`p-4 rounded-2xl border transition-all ${
-                                            c.isPrimary
-                                                ? 'bg-rose-500/10 border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.15)]'
-                                                : 'bg-white/5 border-white/10 hover:border-white/20'
-                                        }`}
-                                    >
-                                        <div className="flex items-start justify-between">
-                                            <div className="space-y-1">
-                                                <div className="flex items-center space-x-2">
-                                                    <span className="font-bold text-sm text-[var(--text)]">{c.name}</span>
-                                                    {c.isPrimary && (
-                                                        <span className="px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[10px] font-bold border border-rose-500/30">
-                                                            PRIMARY DISPATCH
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <p className="text-xs text-[var(--text-muted)]">{c.relationship}</p>
-                                                <p className="text-xs font-mono text-[var(--text)]">{c.phoneNumber}</p>
-                                            </div>
-
-                                            <div className="flex items-center space-x-1">
-                                                <button
-                                                    onClick={() => handleOpenEditModal(c)}
-                                                    className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-all"
-                                                    title="Edit"
-                                                >
-                                                    <Edit3 className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDeleteContact(c.id)}
-                                                    className="p-1.5 rounded-lg text-rose-400/60 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                {/* Section 2: Designated Emergency Contacts Management */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h2 className="text-lg sm:text-xl font-bold text-[var(--text)] tracking-tight">
+                                Emergency Contacts Network
+                            </h2>
+                            <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                                People who will receive instant telemetry alerts if you trigger SOS during a session.
+                            </p>
                         </div>
+
+                        <button
+                            onClick={handleOpenAddModal}
+                            className="auth-submit-btn px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-2 shadow-lg"
+                        >
+                            <Plus className="w-4 h-4" />
+                            <span>Add Contact</span>
+                        </button>
                     </div>
 
-                    {/* Right Column: Safety Events History (5 Cols) */}
-                    <div className="lg:col-span-5 space-y-6">
-                        <div className="p-6 sm:p-8 rounded-3xl glass-card border border-white/10 space-y-5">
-                            <div className="flex items-center space-x-3">
-                                <div className="p-2.5 rounded-2xl bg-white/5 border border-white/10 text-[var(--accent)]">
-                                    <History className="w-5 h-5" />
-                                </div>
-                                <div>
-                                    <h2 className="text-base sm:text-lg font-bold text-[var(--text)]">Safety Events History</h2>
-                                    <p className="text-xs text-[var(--text-muted)]">Past emergency activations and resolution log.</p>
-                                </div>
-                            </div>
-
-                            {events.length === 0 && !loadingEvents && (
-                                <div className="p-6 rounded-2xl bg-white/5 border border-dashed border-white/15 text-center text-xs text-[var(--text-muted)]">
-                                    No safety events on record. All clear!
-                                </div>
-                            )}
-
-                            <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
-                                {events.map((ev) => (
-                                    <div
-                                        key={ev.id}
-                                        className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-2.5 text-xs"
-                                    >
-                                        <div className="flex items-center justify-between">
-                                            <span className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] ${
-                                                ev.status === 'RESOLVED' 
-                                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
-                                                    : 'bg-rose-500/20 text-rose-300 border border-rose-500/30 animate-pulse'
-                                            }`}>
-                                                {ev.status}
-                                            </span>
-                                            <span className="text-[var(--text-muted)]">
-                                                {new Date(ev.triggeredAt).toLocaleString()}
-                                            </span>
+                    {loadingContacts ? (
+                        <div className="p-12 glass-card">
+                            <StrideLoader size="md" text="Loading designated emergency contacts..." />
+                        </div>
+                    ) : contacts.length === 0 ? (
+                        <div className="p-8 sm:p-12 rounded-3xl glass-card border border-white/10 text-center space-y-3">
+                            <Heart className="w-10 h-10 mx-auto text-[var(--text-muted)] opacity-50" />
+                            <h3 className="text-base font-bold text-[var(--text)]">No Emergency Contacts Registered</h3>
+                            <p className="text-xs text-[var(--text-muted)] max-w-sm mx-auto">
+                                Add at least one family member, friend, or trainer to ensure your safety tracking alerts reach someone immediately.
+                            </p>
+                            <button
+                                onClick={handleOpenAddModal}
+                                className="auth-submit-btn px-5 py-2.5 rounded-xl text-xs font-bold inline-flex items-center space-x-2 shadow-md"
+                            >
+                                <Plus className="w-4 h-4" />
+                                <span>Add First Emergency Contact</span>
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {contacts.map((c) => (
+                                <div
+                                    key={c.id}
+                                    className="p-5 rounded-3xl glass-card border border-white/10 flex items-center justify-between gap-4 hover:border-[var(--accent)]/40 transition-all group"
+                                >
+                                    <div className="flex items-center space-x-3.5 min-w-0">
+                                        <div className="w-11 h-11 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-[var(--accent)] shrink-0 font-black text-sm">
+                                            {c.name.charAt(0).toUpperCase()}
                                         </div>
-
-                                        <div className="flex items-center justify-between text-[var(--text-muted)]">
-                                            <span>Channels: SMS ({ev.smsStatus || 'N/A'}) • WA ({ev.whatsappStatus || 'N/A'}) • Call ({ev.callStatus || 'N/A'})</span>
-                                        </div>
-
-                                        {ev.latitude != null && ev.longitude != null && (
-                                            <div className="flex items-center justify-between pt-1 border-t border-white/5">
-                                                <a
-                                                    href={`https://maps.google.com/?q=${ev.latitude},${ev.longitude}`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-[var(--accent)] hover:underline inline-flex items-center gap-1"
-                                                >
-                                                    <MapPin className="w-3 h-3" />
-                                                    <span>View Coordinates Pin</span>
-                                                </a>
-
-                                                {ev.status !== 'RESOLVED' && (
-                                                    <button
-                                                        onClick={() => handleResolveEvent(ev.id)}
-                                                        disabled={resolvingId === ev.id}
-                                                        className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 font-semibold text-[10px] transition-all flex items-center gap-1"
-                                                    >
-                                                        <Check className="w-3 h-3" />
-                                                        <span>{resolvingId === ev.id ? 'Resolving...' : 'Mark Resolved'}</span>
-                                                    </button>
+                                        <div className="min-w-0">
+                                            <div className="flex items-center space-x-2">
+                                                <h3 className="text-sm font-bold text-[var(--text)] truncate">{c.name}</h3>
+                                                {c.isPrimary && (
+                                                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[var(--accent)]/20 text-[var(--accent)] border border-[var(--accent)]/30 shrink-0">
+                                                        PRIMARY
+                                                    </span>
                                                 )}
                                             </div>
-                                        )}
+                                            <p className="text-xs text-[var(--text-muted)]">{c.relationship} • {c.phoneNumber}</p>
+                                        </div>
                                     </div>
-                                ))}
-                            </div>
+
+                                    <div className="flex items-center space-x-1">
+                                        <button
+                                            onClick={() => handleOpenEditModal(c)}
+                                            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-[var(--text-muted)] hover:text-white transition-colors"
+                                            title="Edit Contact"
+                                        >
+                                            <Edit3 className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDeleteContact(c.id)}
+                                            className="p-2 rounded-xl bg-white/5 hover:bg-rose-500/20 text-[var(--text-muted)] hover:text-rose-400 transition-colors"
+                                            title="Delete Contact"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    </div>
+                    )}
                 </div>
 
-                {/* 2-Step SOS Confirmation Modal */}
-                {showConfirmModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-                        <div className="relative w-full max-w-md glass-card p-6 sm:p-8 space-y-5 border border-rose-500/40 animate-in zoom-in-95 duration-200 text-center">
-                            <div className="w-16 h-16 rounded-full bg-rose-500/20 border-2 border-rose-500/40 flex items-center justify-center mx-auto text-rose-400">
-                                <AlertTriangle className="w-8 h-8 animate-bounce" />
-                            </div>
+                {/* Section 3: Safety Incidents & SOS History Log */}
+                <div className="space-y-4">
+                    <div className="flex items-center space-x-2">
+                        <History className="w-5 h-5 text-[var(--accent)]" />
+                        <h2 className="text-lg sm:text-xl font-bold text-[var(--text)] tracking-tight">
+                            Emergency Incident Logs
+                        </h2>
+                    </div>
 
-                            <div className="space-y-2">
-                                <h3 className="text-xl font-black text-[var(--text)] tracking-tight">
-                                    Trigger Emergency SOS?
-                                </h3>
-                                <p className="text-xs sm:text-sm text-[var(--text-muted)] leading-relaxed">
-                                    Are you sure you need emergency assistance? This will dispatch your live coordinates via SMS, WhatsApp, and Voice Call to:
-                                </p>
-                                {contacts.find(c => c.isPrimary) && (
-                                    <div className="p-3 rounded-xl bg-white/5 border border-white/10 font-bold text-xs text-rose-300">
-                                        {contacts.find(c => c.isPrimary)?.name} ({contacts.find(c => c.isPrimary)?.phoneNumber})
+                    {loadingEvents ? (
+                        <div className="p-12 glass-card">
+                            <StrideLoader size="md" text="Loading incident logs..." />
+                        </div>
+                    ) : events.length === 0 ? (
+                        <div className="p-6 rounded-3xl glass-card border border-white/10 text-center text-xs text-[var(--text-muted)]">
+                            No emergency incidents have been recorded. Stay safe on your strides!
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {events.map((ev) => (
+                                <div
+                                    key={ev.id}
+                                    className="p-4 sm:p-5 rounded-3xl glass-card border border-white/10 space-y-3"
+                                >
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                        <div className="flex items-center space-x-2.5">
+                                            <div className={`p-2 rounded-xl ${ev.status === 'RESOLVED' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose-500/15 text-rose-400'}`}>
+                                                <ShieldAlert className="w-4 h-4" />
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="text-xs font-bold text-[var(--text)]">
+                                                        SOS Incident #{ev.id.substring(0, 8)}
+                                                    </span>
+                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${ev.status === 'RESOLVED' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'}`}>
+                                                        {ev.status}
+                                                    </span>
+                                                </div>
+                                                <p className="text-[11px] text-[var(--text-muted)] flex items-center gap-1 mt-0.5">
+                                                    <Clock className="w-3 h-3" />
+                                                    {new Date(ev.triggeredAt).toLocaleString()}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {ev.status !== 'RESOLVED' && (
+                                            <button
+                                                onClick={() => handleResolveEvent(ev.id)}
+                                                disabled={resolvingId === ev.id}
+                                                className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-bold transition-all self-start sm:self-center"
+                                            >
+                                                {resolvingId === ev.id ? 'Resolving...' : 'Mark as Resolved'}
+                                            </button>
+                                        )}
                                     </div>
-                                )}
+
+                                    {/* Multichannel Delivery Breakdown */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2 border-t border-white/5 text-xs">
+                                        <div className="flex items-center justify-between p-2 rounded-xl bg-white/5">
+                                            <span className="text-[var(--text-muted)]">SMS</span>
+                                            {renderStatusBadge(ev.smsStatus)}
+                                        </div>
+                                        <div className="flex items-center justify-between p-2 rounded-xl bg-white/5">
+                                            <span className="text-[var(--text-muted)]">WhatsApp</span>
+                                            {renderStatusBadge(ev.whatsappStatus)}
+                                        </div>
+                                        <div className="flex items-center justify-between p-2 rounded-xl bg-white/5">
+                                            <span className="text-[var(--text-muted)]">Voice Call</span>
+                                            {renderStatusBadge(ev.callStatus)}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Modal: SOS Hold / Tap Confirmation */}
+                {showConfirmModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="relative w-full max-w-md glass-card p-6 sm:p-7 space-y-5 animate-in zoom-in-95 duration-200 border border-rose-500/40">
+                            <div className="flex items-center space-x-3 text-rose-400">
+                                <div className="p-3 rounded-2xl bg-rose-500/20">
+                                    <ShieldAlert className="w-6 h-6" />
+                                </div>
+                                <h3 className="text-lg font-black text-[var(--text)]">Confirm Emergency SOS</h3>
                             </div>
 
-                            <div className="flex space-x-3 pt-2">
+                            <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                                This action will immediately capture your current coordinates and dispatch multichannel priority emergency notifications to your registered contacts. Are you in an emergency?
+                            </p>
+
+                            <div className="flex items-center gap-3 pt-2">
                                 <button
                                     onClick={() => setShowConfirmModal(false)}
-                                    className="flex-1 h-12 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-[var(--text)] transition-all"
+                                    className="flex-1 py-3 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-[var(--text)] text-xs font-bold transition-all"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={executeSosDispatch}
-                                    className="flex-1 h-12 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-black tracking-wide shadow-[0_0_20px_rgba(244,63,94,0.6)] transition-all"
+                                    className="flex-1 py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold transition-all shadow-[0_0_20px_rgba(244,63,94,0.5)]"
                                 >
-                                    Yes, Send SOS
+                                    Yes, Trigger SOS
                                 </button>
                             </div>
                         </div>
                     </div>
                 )}
 
-                {/* Add / Edit Emergency Contact Modal */}
+                {/* Modal: Add/Edit Emergency Contact */}
                 {showContactModal && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
                         <div className="relative w-full max-w-md glass-card p-6 sm:p-8 space-y-5 animate-in zoom-in-95 duration-200">
-                            <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                                <h3 className="text-lg font-bold text-[var(--text)]">
-                                    {editingContactId ? 'Edit Emergency Contact' : 'Add Emergency Contact'}
-                                </h3>
-                                <button
-                                    onClick={() => setShowContactModal(false)}
-                                    className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-all"
-                                >
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
+                            <button
+                                onClick={() => setShowContactModal(false)}
+                                className="absolute top-4 right-4 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-colors"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+
+                            <h3 className="text-lg font-bold text-[var(--text)]">
+                                {editingContactId ? 'Edit Emergency Contact' : 'Add Emergency Contact'}
+                            </h3>
 
                             {modalError && (
-                                <div className="p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-medium flex items-center space-x-2">
-                                    <AlertTriangle className="w-4 h-4 shrink-0" />
-                                    <span>{modalError}</span>
+                                <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs">
+                                    {modalError}
                                 </div>
                             )}
 
                             <form onSubmit={handleSaveContact} className="space-y-4">
-                                <div className="space-y-1.5">
-                                    <label className="block text-xs font-semibold text-[var(--text)]">Contact Name</label>
+                                <div>
+                                    <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">
+                                        Contact Full Name
+                                    </label>
                                     <input
                                         type="text"
+                                        required
                                         value={modalName}
                                         onChange={(e) => setModalName(e.target.value)}
-                                        required
-                                        placeholder="e.g. Jane Doe"
-                                        className="w-full h-11 px-4 rounded-xl bg-white/5 border border-white/15 text-[var(--text)] focus:outline-none focus:border-[var(--accent)] transition-all text-sm"
+                                        placeholder="e.g. Sarah Connor"
+                                        className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[var(--text)] text-xs focus:outline-none focus:border-[var(--accent)]"
                                     />
                                 </div>
 
-                                <div className="space-y-1.5">
-                                    <label className="block text-xs font-semibold text-[var(--text)]">Relationship</label>
+                                <div>
+                                    <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">
+                                        Relationship
+                                    </label>
                                     <select
                                         value={modalRelationship}
                                         onChange={(e) => setModalRelationship(e.target.value)}
-                                        className="w-full h-11 px-4 rounded-xl bg-white/5 border border-white/15 text-[var(--text)] focus:outline-none focus:border-[var(--accent)] transition-all text-sm [color-scheme:dark]"
+                                        className="w-full px-4 py-2.5 rounded-xl bg-[#1e2230] border border-white/10 text-[var(--text)] text-xs focus:outline-none focus:border-[var(--accent)]"
                                     >
                                         {RELATIONSHIPS.map((r) => (
-                                            <option key={r} value={r} className="bg-[var(--bg)] text-white">{r}</option>
+                                            <option key={r} value={r} className="bg-[#1e2230] text-white">
+                                                {r}
+                                            </option>
                                         ))}
                                     </select>
                                 </div>
 
-                                <div className="space-y-1.5">
-                                    <label className="block text-xs font-semibold text-[var(--text)]">Phone Number</label>
+                                <div>
+                                    <label className="block text-xs font-bold text-[var(--text-muted)] uppercase mb-1">
+                                        Phone Number (with Country Code)
+                                    </label>
                                     <input
                                         type="tel"
+                                        required
                                         value={modalPhone}
                                         onChange={(e) => setModalPhone(e.target.value)}
-                                        required
-                                        placeholder="e.g. +1 555-0199"
-                                        className="w-full h-11 px-4 rounded-xl bg-white/5 border border-white/15 text-[var(--text)] focus:outline-none focus:border-[var(--accent)] transition-all text-sm font-mono"
+                                        placeholder="e.g. +14155552671"
+                                        className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[var(--text)] text-xs focus:outline-none focus:border-[var(--accent)]"
                                     />
                                 </div>
 
-                                <div className="flex items-center space-x-2 pt-2">
+                                <div className="flex items-center space-x-2 pt-1">
                                     <input
                                         type="checkbox"
-                                        id="modalIsPrimary"
+                                        id="modalPrimary"
                                         checked={modalIsPrimary}
                                         onChange={(e) => setModalIsPrimary(e.target.checked)}
-                                        className="w-4 h-4 rounded border-white/20 bg-white/5 text-[var(--accent)] focus:ring-[var(--accent)]"
+                                        className="w-4 h-4 rounded border-white/20 bg-white/5 text-[var(--accent)] focus:ring-0"
                                     />
-                                    <label htmlFor="modalIsPrimary" className="text-xs text-[var(--text)] font-medium cursor-pointer">
-                                        Designate as primary emergency dispatch recipient
+                                    <label htmlFor="modalPrimary" className="text-xs text-[var(--text)] cursor-pointer">
+                                        Set as Primary Emergency Contact
                                     </label>
                                 </div>
 
-                                <div className="flex space-x-3 pt-3">
+                                <div className="flex items-center gap-3 pt-3">
                                     <button
                                         type="button"
                                         onClick={() => setShowContactModal(false)}
-                                        className="flex-1 h-11 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 text-xs font-semibold text-[var(--text)] transition-all"
+                                        className="flex-1 py-2.5 rounded-xl bg-white/10 text-white text-xs font-bold hover:bg-white/15 transition-all"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
                                         disabled={modalLoading}
-                                        className="flex-1 auth-submit-btn h-11 rounded-xl text-xs font-semibold transition-all disabled:opacity-50"
+                                        className="flex-1 py-2.5 rounded-xl auth-submit-btn text-xs font-bold shadow-lg disabled:opacity-50"
                                     >
                                         {modalLoading ? 'Saving...' : 'Save Contact'}
                                     </button>

@@ -85,6 +85,7 @@ export interface UseGeoTrackerReturn {
     resetTracker: () => void;
     startedAt: string | null;
     endedAt: string | null;
+    routePoints: Array<{ latitude: number; longitude: number; accuracy?: number; speed?: number; recordedAt: string }>;
 }
 
 export const useGeoTracker = (): UseGeoTrackerReturn => {
@@ -103,6 +104,7 @@ export const useGeoTracker = (): UseGeoTrackerReturn => {
     const [gpsAccuracy, setGpsAccuracy] = useState<number | null>(null);
     const [gpsStatus, setGpsStatus] = useState<GpsPermissionStatus>('PROMPT');
     const [error, setError] = useState<string | null>(null);
+    const [routePoints, setRoutePoints] = useState<Array<{ latitude: number; longitude: number; accuracy?: number; speed?: number; recordedAt: string }>>([]);
     
     // Simulator configuration
     const [isSimulating, setIsSimulating] = useState<boolean>(false);
@@ -136,6 +138,8 @@ export const useGeoTracker = (): UseGeoTrackerReturn => {
     const isSimulatingRef = useRef<boolean>(false);
     const targetSimSpeedRef = useRef<number>(4.2); // Default to Walk ~4.2 km/h
     const samplesCountRef = useRef<number>(0);
+    const routePointsRef = useRef<Array<{ latitude: number; longitude: number; accuracy?: number; speed?: number; recordedAt: string }>>([]);
+    const lastRecordedPointTimeRef = useRef<number>(0);
 
     const watchIdRef = useRef<number | null>(null);
     const lastCoordRef = useRef<{ lat: number; lng: number; timestamp: number } | null>(null);
@@ -358,6 +362,20 @@ export const useGeoTracker = (): UseGeoTrackerReturn => {
             }));
         }
 
+        // Capture GPS Route breadcrumb point (every 3 seconds or initial point)
+        if (timestamp - lastRecordedPointTimeRef.current >= 3000 || routePointsRef.current.length === 0) {
+            lastRecordedPointTimeRef.current = timestamp;
+            const newPt = {
+                latitude,
+                longitude,
+                accuracy: roundedAcc,
+                speed: resolvedSpeedKmh,
+                recordedAt: new Date(timestamp).toISOString()
+            };
+            routePointsRef.current.push(newPt);
+            setRoutePoints([...routePointsRef.current]);
+        }
+
         lastCoordRef.current = { lat: latitude, lng: longitude, timestamp };
     }, [classifySpeed]);
 
@@ -489,6 +507,9 @@ export const useGeoTracker = (): UseGeoTrackerReturn => {
         lastCoordRef.current = null;
         samplesCountRef.current = 0;
         setGpsAccuracy(null);
+        routePointsRef.current = [];
+        setRoutePoints([]);
+        lastRecordedPointTimeRef.current = 0;
 
         // Check SecureContext and Geolocation API
         const isSecure = typeof window !== 'undefined' ? window.isSecureContext : false;
@@ -534,7 +555,7 @@ export const useGeoTracker = (): UseGeoTrackerReturn => {
 
             if (!isSecure && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
                 setGpsStatus('INSECURE_CONTEXT');
-                setError('Mobile browsers disable Geolocation over plain HTTP (192.168.x.x). In Chrome on Android, navigate to chrome://flags/#unsafely-treat-insecure-origin-as-secure, add http://192.168.1.6:5173, enable it and relaunch; or use Simulator Mode.');
+                setError(`Mobile browsers disable Geolocation over plain HTTP. In Chrome on Android, navigate to chrome://flags/#unsafely-treat-insecure-origin-as-secure, add ${window.location.origin}, enable it and relaunch; or use Simulator Mode.`);
                 setStatus('tracking');
                 return;
             }
@@ -634,6 +655,9 @@ export const useGeoTracker = (): UseGeoTrackerReturn => {
         setEndedAt(null);
         setError(null);
         setGpsAccuracy(null);
+        routePointsRef.current = [];
+        setRoutePoints([]);
+        lastRecordedPointTimeRef.current = 0;
     };
 
     // Calculate current pace: min/km
@@ -730,5 +754,6 @@ export const useGeoTracker = (): UseGeoTrackerReturn => {
         resetTracker,
         startedAt,
         endedAt,
+        routePoints,
     };
 };

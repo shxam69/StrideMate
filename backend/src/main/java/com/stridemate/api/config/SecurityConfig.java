@@ -54,7 +54,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/register", "/api/auth/login", "/api/leaderboard", "/api/leaderboard/**").permitAll()
                         .requestMatchers("/api/auth/request-otp", "/api/auth/verify-otp", "/api/auth/resend-otp").permitAll()
                         .requestMatchers("/api/auth/forgot-password", "/api/auth/reset-password").permitAll()
-                        .requestMatchers("/api/health", "/api/users/avatar/**").permitAll()
+                        .requestMatchers("/api/health", "/api/users/avatar/**", "/api/safety/mode", "/api/safety/callbacks/**").permitAll()
                         .requestMatchers("/h2-console/**").permitAll()
                         .anyRequest().authenticated()
                 )
@@ -78,11 +78,10 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // Allow all local dev ports, LAN IPs (e.g. mobile testing on 192.168.1.6:5173), and production Vercel origins
+        // Allow all local dev ports, LAN IPs, and production Vercel origins
         configuration.setAllowedOriginPatterns(List.of(
                 "http://localhost:*",
                 "http://127.0.0.1:*",
-                "http://192.168.1.6:5173",
                 "http://192.168.*:*",
                 "http://10.*:*",
                 "http://172.16.*:*",

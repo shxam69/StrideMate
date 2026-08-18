@@ -88,19 +88,12 @@ const OtpVerification: React.FC = () => {
             return false;
         }
 
-        console.log('[OTP] verify started');
         setIsError(false);
         setErrorMsg('');
         setIsVerifying(true);
 
         try {
             const res = await api.post('/auth/verify-otp', { email, otp: code });
-
-            console.log('[OTP] response:', res.data);
-            console.log('[OTP] token exists:', !!res.data?.token);
-            console.log('[OTP] user:', res.data?.user);
-            console.log('[OTP] profileCompleted:', res.data?.user?.profileCompleted);
-
             const { token, user } = res.data as { token: string; user: any };
 
             if (token && user) {
@@ -112,7 +105,6 @@ const OtpVerification: React.FC = () => {
                 login(token, user);
 
                 const destination = user.profileCompleted ? '/dashboard' : '/onboarding';
-                console.log('[OTP] navigating to:', destination);
 
                 // Short delay so the success tick/animation in OrbitalOtpInput renders
                 setTimeout(() => {
@@ -122,7 +114,6 @@ const OtpVerification: React.FC = () => {
                 return true;
             }
 
-            console.log('[OTP] verify-otp succeeded but response missing token or user');
             setErrorMsg('Verification failed. Please try again.');
             return false;
 
@@ -133,7 +124,6 @@ const OtpVerification: React.FC = () => {
                     ? err.response.data
                     : err.response?.data?.message || err.response?.data?.error;
             setErrorMsg(backendMsg || 'Invalid, expired, or already used code.');
-            console.log('[OTP] verification error:', backendMsg);
             return false;
         } finally {
             setIsVerifying(false);

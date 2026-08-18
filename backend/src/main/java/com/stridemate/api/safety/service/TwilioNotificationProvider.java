@@ -1,21 +1,21 @@
 package com.stridemate.api.safety.service;
 
+import com.stridemate.api.safety.dto.NotificationResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.*;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.Base64;
 import java.util.Map;
 
-@Service
+@Service("twilioNotificationProvider")
 public class TwilioNotificationProvider implements NotificationProvider {
 
     private static final Logger log = LoggerFactory.getLogger(TwilioNotificationProvider.class);
@@ -41,7 +41,7 @@ public class TwilioNotificationProvider implements NotificationProvider {
         this.whatsappFrom = whatsappFrom != null ? whatsappFrom.trim() : "";
         this.voiceFrom = voiceFrom != null ? voiceFrom.trim() : "";
         this.mode = mode != null ? mode.trim().toLowerCase() : "mock";
-        
+
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(5000);
         factory.setReadTimeout(5000);
@@ -53,14 +53,19 @@ public class TwilioNotificationProvider implements NotificationProvider {
     }
 
     @Override
-    public String sendSms(String toPhone, String message) {
+    public NotificationResult sendSms(String toPhone, String message) {
         if (toPhone == null || toPhone.isBlank()) {
-            return "SKIPPED";
+            return NotificationResult.skipped("Empty recipient phone number");
+        }
+
+        if ("mock".equalsIgnoreCase(mode)) {
+            log.info("[MOCK SMS] Outbound alert to: {} | Message:\n{}", maskPhone(toPhone), message);
+            return NotificationResult.mockSent("sms");
         }
 
         if (!isRealModeConfigured()) {
-            log.info("[MOCK SMS] Outbound alert to: {} | Message:\n{}", maskPhone(toPhone), message);
-            return "MOCK_SENT";
+            log.warn("Twilio SMS provider unavailable (API credentials not configured)");
+            return NotificationResult.unavailable("TWILIO", "Twilio API credentials not configured");
         }
 
         try {
@@ -78,26 +83,31 @@ public class TwilioNotificationProvider implements NotificationProvider {
 
             if (response.getStatusCode().is2xxSuccessful()) {
                 log.info("Twilio SMS successfully dispatched to {}", maskPhone(toPhone));
-                return "SENT";
+                return NotificationResult.success("TWILIO", "SENT", "twilio-sms-sent");
             } else {
                 log.warn("Twilio SMS failed with status {}: {}", response.getStatusCode(), response.getBody());
-                return "FAILED";
+                return NotificationResult.failed("TWILIO", String.valueOf(response.getStatusCode().value()), response.getBody());
             }
         } catch (Exception e) {
             log.error("Twilio SMS error to {}: {}", maskPhone(toPhone), e.getMessage());
-            return "FAILED";
+            return NotificationResult.failed("TWILIO", "EXCEPTION", e.getMessage());
         }
     }
 
     @Override
-    public String sendWhatsApp(String toPhone, String message, Map<String, String> templateParams) {
+    public NotificationResult sendWhatsApp(String toPhone, String message, Map<String, String> templateParams) {
         if (toPhone == null || toPhone.isBlank()) {
-            return "SKIPPED";
+            return NotificationResult.skipped("Empty recipient phone number");
+        }
+
+        if ("mock".equalsIgnoreCase(mode)) {
+            log.info("[MOCK WHATSAPP] Outbound alert to: {} | Message:\n{}", maskPhone(toPhone), message);
+            return NotificationResult.mockSent("whatsapp");
         }
 
         if (!isRealModeConfigured()) {
-            log.info("[MOCK WHATSAPP] Outbound alert to: {} | Message:\n{}", maskPhone(toPhone), message);
-            return "MOCK_SENT";
+            log.warn("Twilio WhatsApp provider unavailable (API credentials not configured)");
+            return NotificationResult.unavailable("TWILIO", "Twilio API credentials not configured");
         }
 
         try {
@@ -118,26 +128,31 @@ public class TwilioNotificationProvider implements NotificationProvider {
 
             if (response.getStatusCode().is2xxSuccessful()) {
                 log.info("Twilio WhatsApp message successfully dispatched to {}", maskPhone(toPhone));
-                return "SENT";
+                return NotificationResult.success("TWILIO", "SENT", "twilio-wa-sent");
             } else {
                 log.warn("Twilio WhatsApp failed with status {}: {}", response.getStatusCode(), response.getBody());
-                return "FAILED";
+                return NotificationResult.failed("TWILIO", String.valueOf(response.getStatusCode().value()), response.getBody());
             }
         } catch (Exception e) {
             log.error("Twilio WhatsApp error to {}: {}", maskPhone(toPhone), e.getMessage());
-            return "FAILED";
+            return NotificationResult.failed("TWILIO", "EXCEPTION", e.getMessage());
         }
     }
 
     @Override
-    public String makeEmergencyCall(String toPhone, String speechMessage) {
+    public NotificationResult makeEmergencyCall(String toPhone, String speechMessage) {
         if (toPhone == null || toPhone.isBlank()) {
-            return "SKIPPED";
+            return NotificationResult.skipped("Empty recipient phone number");
+        }
+
+        if ("mock".equalsIgnoreCase(mode)) {
+            log.info("[MOCK CALL] Emergency Voice call to: {} | Speech: '{}'", maskPhone(toPhone), speechMessage);
+            return NotificationResult.mockSent("voice");
         }
 
         if (!isRealModeConfigured()) {
-            log.info("[MOCK CALL] Emergency Voice call to: {} | Speech: '{}'", maskPhone(toPhone), speechMessage);
-            return "MOCK_SENT";
+            log.warn("Twilio Voice Call provider unavailable (API credentials not configured)");
+            return NotificationResult.unavailable("TWILIO", "Twilio API credentials not configured");
         }
 
         try {
@@ -157,14 +172,14 @@ public class TwilioNotificationProvider implements NotificationProvider {
 
             if (response.getStatusCode().is2xxSuccessful()) {
                 log.info("Twilio Voice call successfully initiated to {}", maskPhone(toPhone));
-                return "SENT";
+                return NotificationResult.success("TWILIO", "INITIATED", "twilio-call-sent");
             } else {
                 log.warn("Twilio Voice call failed with status {}: {}", response.getStatusCode(), response.getBody());
-                return "FAILED";
+                return NotificationResult.failed("TWILIO", String.valueOf(response.getStatusCode().value()), response.getBody());
             }
         } catch (Exception e) {
             log.error("Twilio Voice call error to {}: {}", maskPhone(toPhone), e.getMessage());
-            return "FAILED";
+            return NotificationResult.failed("TWILIO", "EXCEPTION", e.getMessage());
         }
     }
 

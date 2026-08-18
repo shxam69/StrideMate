@@ -1,14 +1,38 @@
-# Environment / secrets
+# Environment & Secrets
 .env
 .env.*
+.env.local
 !.env.example
 
-# Node
+# Node / Frontend
 node_modules/
-
-# Build output
 dist/
+dist-ssr/
+.vite/
+*.local
 
-# Uploads
+# Java / Maven / Backend
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+
+# File Uploads & Local Media Storage
 uploads/
 backend/uploads/
+
+# OS Metadata
+.DS_Store
+Thumbs.db

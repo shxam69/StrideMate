@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
+import StrideLoader from '../components/ui/StrideLoader';
 import api from '../services/api';
 import { getAvatarUrl } from '../utils/avatar';
 import type { EmergencyContact } from '../types';
@@ -672,6 +673,12 @@ const Profile: React.FC = () => {
                                         <Plus className="w-5 h-5" />
                                     </button>
                                 </div>
+
+                                {loadingContacts && (
+                                    <div className="py-8">
+                                        <StrideLoader size="sm" text="Loading emergency contacts..." />
+                                    </div>
+                                )}
 
                                 {contacts.length === 0 && !loadingContacts && (
                                     <div className="p-5 rounded-2xl bg-white/5 border border-dashed border-white/15 text-center space-y-3 my-4">

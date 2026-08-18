@@ -2,9 +2,13 @@ package com.stridemate.api.activity.service;
 
 import com.stridemate.api.activity.dto.ActivityRequest;
 import com.stridemate.api.activity.dto.ActivityResponse;
+import com.stridemate.api.activity.dto.ActivityRouteResponseDto;
+import com.stridemate.api.activity.dto.RoutePointDto;
 import com.stridemate.api.activity.entity.Activity;
+import com.stridemate.api.activity.entity.ActivityRoutePoint;
 import com.stridemate.api.activity.entity.SportType;
 import com.stridemate.api.activity.repository.ActivityRepository;
+import com.stridemate.api.activity.repository.ActivityRoutePointRepository;
 import com.stridemate.api.exception.InvalidActivityException;
 import com.stridemate.api.exception.ResourceNotFoundException;
 import com.stridemate.api.gamification.dto.ActivitySaveResultDto;
@@ -19,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -27,6 +32,7 @@ import java.util.stream.Collectors;
 public class ActivityService {
 
     private final ActivityRepository activityRepository;
+    private final ActivityRoutePointRepository routePointRepository;
     private final UserRepository userRepository;
     private final ScoringService scoringService;
     private final GamificationService gamificationService;
@@ -34,10 +40,12 @@ public class ActivityService {
     @Autowired
     public ActivityService(
             ActivityRepository activityRepository,
+            ActivityRoutePointRepository routePointRepository,
             UserRepository userRepository,
             ScoringService scoringService,
             GamificationService gamificationService) {
         this.activityRepository = activityRepository;
+        this.routePointRepository = routePointRepository;
         this.userRepository = userRepository;
         this.scoringService = scoringService;
         this.gamificationService = gamificationService;
@@ -89,6 +97,43 @@ public class ActivityService {
 
         Activity savedActivity = activityRepository.save(activity);
 
+        // Persist GPS Route Points if provided
+        if (request.getRoutePoints() != null && !request.getRoutePoints().isEmpty()) {
+            List<ActivityRoutePoint> pointsToSave = new ArrayList<>();
+            // Reasonable downsampling if > 1500 points to prevent bloat
+            List<RoutePointDto> rawPoints = request.getRoutePoints();
+            int step = Math.max(1, rawPoints.size() / 1000);
+            
+            for (int i = 0; i < rawPoints.size(); i += step) {
+                RoutePointDto p = rawPoints.get(i);
+                if (p.getLatitude() != null && p.getLongitude() != null) {
+                    pointsToSave.add(new ActivityRoutePoint(
+                            savedActivity,
+                            p.getLatitude(),
+                            p.getLongitude(),
+                            p.getAccuracy(),
+                            p.getSpeed(),
+                            p.getRecordedAt() != null ? p.getRecordedAt() : Instant.now()
+                    ));
+                }
+            }
+            // Always ensure the very last point is captured
+            if (rawPoints.size() > 1 && (rawPoints.size() - 1) % step != 0) {
+                RoutePointDto last = rawPoints.get(rawPoints.size() - 1);
+                if (last.getLatitude() != null && last.getLongitude() != null) {
+                    pointsToSave.add(new ActivityRoutePoint(
+                            savedActivity,
+                            last.getLatitude(),
+                            last.getLongitude(),
+                            last.getAccuracy(),
+                            last.getSpeed(),
+                            last.getRecordedAt() != null ? last.getRecordedAt() : Instant.now()
+                    ));
+                }
+            }
+            routePointRepository.saveAll(pointsToSave);
+        }
+
         // Atomic Gamification Processing
         GamificationService.ProgressionResult prog = gamificationService.processActivityGamification(user, savedActivity);
 
@@ -131,6 +176,44 @@ public class ActivityService {
         }
 
         return toResponse(activity);
+    }
+
+    @Transactional(readOnly = true)
+    public ActivityRouteResponseDto getActivityRoute(UUID activityId, String email, boolean privacyTrim) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Activity activity = activityRepository.findById(activityId)
+                .orElseThrow(() -> new ResourceNotFoundException("Activity not found with id: " + activityId));
+
+        if (!activity.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("You do not have permission to view this route.");
+        }
+
+        List<ActivityRoutePoint> rawPoints = routePointRepository.findByActivityIdOrderByRecordedAtAsc(activityId);
+        List<RoutePointDto> mappedPoints = rawPoints.stream()
+                .map(p -> new RoutePointDto(p.getLatitude(), p.getLongitude(), p.getAccuracy(), p.getSpeed(), p.getRecordedAt()))
+                .collect(Collectors.toList());
+
+        // Privacy Trimming: If requested and route has >= 10 points, trim first 10% and last 10% (up to 3 points)
+        if (privacyTrim && mappedPoints.size() >= 8) {
+            int trimCount = Math.min(3, Math.max(1, mappedPoints.size() / 10));
+            int fromIndex = trimCount;
+            int toIndex = mappedPoints.size() - trimCount;
+            if (fromIndex < toIndex) {
+                mappedPoints = new ArrayList<>(mappedPoints.subList(fromIndex, toIndex));
+            }
+        }
+
+        return new ActivityRouteResponseDto(
+                activity.getId(),
+                activity.getSport() != null ? activity.getSport().name() : "WALKING",
+                activity.getDistanceKm(),
+                activity.getTotalDurationSeconds() != null ? activity.getTotalDurationSeconds() : 0,
+                activity.getCalories(),
+                activity.getPoints(),
+                privacyTrim,
+                mappedPoints
+        );
     }
 
     private SportType resolveSportType(ActivityRequest request) {

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Activity, LogOut, LayoutDashboard, Trophy, Plus, Menu, X, Sun, Moon, User, History, BarChart3, CloudSun, ShieldAlert } from 'lucide-react';
+import { Activity, LogOut, LayoutDashboard, Trophy, Plus, Menu, X, Sun, Moon, User, History, BarChart3, CloudSun, ShieldAlert, Compass } from 'lucide-react';
 import { getAvatarUrl } from '../utils/avatar';
 
 const Navbar: React.FC = () => {
@@ -19,6 +19,7 @@ const Navbar: React.FC = () => {
 
     const navLinks = [
         { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+        { path: '/map', label: 'Smart Map', icon: Compass },
         { path: '/environment', label: 'Environment', icon: CloudSun },
         { path: '/history', label: 'History', icon: History },
         { path: '/analytics', label: 'Analytics', icon: BarChart3 },

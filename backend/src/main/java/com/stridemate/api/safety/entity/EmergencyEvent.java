@@ -12,7 +12,9 @@ import java.util.UUID;
 @Table(name = "emergency_events", indexes = {
         @Index(name = "idx_emergency_events_user_id", columnList = "user_id"),
         @Index(name = "idx_emergency_events_triggered_at", columnList = "triggered_at"),
-        @Index(name = "idx_emergency_events_status", columnList = "status")
+        @Index(name = "idx_emergency_events_status", columnList = "status"),
+        @Index(name = "idx_emergency_events_sms_sid", columnList = "sms_sid"),
+        @Index(name = "idx_emergency_events_client_request_id", columnList = "client_request_id")
 })
 public class EmergencyEvent {
 
@@ -41,16 +43,49 @@ public class EmergencyEvent {
     private Instant triggeredAt;
 
     @Column(name = "status", length = 50, nullable = false)
-    private String status; // TRIGGERED, RESOLVED, FAILED
+    private String status; // TRIGGERED, RESOLVED, FAILED, PARTIALLY_SENT, SENT
+
+    @Column(name = "provider", length = 50)
+    private String provider; // SPRINGEDGE, MOCK
 
     @Column(name = "sms_status", length = 50)
-    private String smsStatus; // SENT, FAILED, SKIPPED, MOCK_SENT
+    private String smsStatus; // REQUESTED, ACCEPTED, SENT, DELIVERED, FAILED, UNAVAILABLE, SKIPPED, MOCK_SENT
 
     @Column(name = "whatsapp_status", length = 50)
-    private String whatsappStatus; // SENT, FAILED, SKIPPED, MOCK_SENT
+    private String whatsappStatus;
 
     @Column(name = "call_status", length = 50)
-    private String callStatus; // SENT, FAILED, SKIPPED, MOCK_SENT
+    private String callStatus;
+
+    @Column(name = "sms_sid", length = 100)
+    private String smsSid;
+
+    @Column(name = "whatsapp_sid", length = 100)
+    private String whatsappSid;
+
+    @Column(name = "call_sid", length = 100)
+    private String callSid;
+
+    @Column(name = "sms_error_code", length = 50)
+    private String smsErrorCode;
+
+    @Column(name = "sms_error_message", columnDefinition = "TEXT")
+    private String smsErrorMessage;
+
+    @Column(name = "whatsapp_error_code", length = 50)
+    private String whatsappErrorCode;
+
+    @Column(name = "whatsapp_error_message", columnDefinition = "TEXT")
+    private String whatsappErrorMessage;
+
+    @Column(name = "call_error_code", length = 50)
+    private String callErrorCode;
+
+    @Column(name = "call_error_message", columnDefinition = "TEXT")
+    private String callErrorMessage;
+
+    @Column(name = "client_request_id", length = 100)
+    private String clientRequestId;
 
     @Column(name = "message", columnDefinition = "TEXT")
     private String message;
@@ -64,12 +99,17 @@ public class EmergencyEvent {
     public EmergencyEvent() {}
 
     public EmergencyEvent(User user, Double latitude, Double longitude, Double accuracyMeters, UUID activityId, String message) {
+        this(user, latitude, longitude, accuracyMeters, activityId, message, null);
+    }
+
+    public EmergencyEvent(User user, Double latitude, Double longitude, Double accuracyMeters, UUID activityId, String message, String clientRequestId) {
         this.user = user;
         this.latitude = latitude;
         this.longitude = longitude;
         this.accuracyMeters = accuracyMeters;
         this.activityId = activityId;
         this.message = message;
+        this.clientRequestId = clientRequestId;
         this.triggeredAt = Instant.now();
         this.status = "TRIGGERED";
         this.createdAt = Instant.now();
@@ -109,6 +149,9 @@ public class EmergencyEvent {
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
+    public String getProvider() { return provider; }
+    public void setProvider(String provider) { this.provider = provider; }
+
     public String getSmsStatus() { return smsStatus; }
     public void setSmsStatus(String smsStatus) { this.smsStatus = smsStatus; }
 
@@ -117,6 +160,36 @@ public class EmergencyEvent {
 
     public String getCallStatus() { return callStatus; }
     public void setCallStatus(String callStatus) { this.callStatus = callStatus; }
+
+    public String getSmsSid() { return smsSid; }
+    public void setSmsSid(String smsSid) { this.smsSid = smsSid; }
+
+    public String getWhatsappSid() { return whatsappSid; }
+    public void setWhatsappSid(String whatsappSid) { this.whatsappSid = whatsappSid; }
+
+    public String getCallSid() { return callSid; }
+    public void setCallSid(String callSid) { this.callSid = callSid; }
+
+    public String getSmsErrorCode() { return smsErrorCode; }
+    public void setSmsErrorCode(String smsErrorCode) { this.smsErrorCode = smsErrorCode; }
+
+    public String getSmsErrorMessage() { return smsErrorMessage; }
+    public void setSmsErrorMessage(String smsErrorMessage) { this.smsErrorMessage = smsErrorMessage; }
+
+    public String getWhatsappErrorCode() { return whatsappErrorCode; }
+    public void setWhatsappErrorCode(String whatsappErrorCode) { this.whatsappErrorCode = whatsappErrorCode; }
+
+    public String getWhatsappErrorMessage() { return whatsappErrorMessage; }
+    public void setWhatsappErrorMessage(String whatsappErrorMessage) { this.whatsappErrorMessage = whatsappErrorMessage; }
+
+    public String getCallErrorCode() { return callErrorCode; }
+    public void setCallErrorCode(String callErrorCode) { this.callErrorCode = callErrorCode; }
+
+    public String getCallErrorMessage() { return callErrorMessage; }
+    public void setCallErrorMessage(String callErrorMessage) { this.callErrorMessage = callErrorMessage; }
+
+    public String getClientRequestId() { return clientRequestId; }
+    public void setClientRequestId(String clientRequestId) { this.clientRequestId = clientRequestId; }
 
     public String getMessage() { return message; }
     public void setMessage(String message) { this.message = message; }

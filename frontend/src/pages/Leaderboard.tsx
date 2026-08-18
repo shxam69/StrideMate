@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import type { LeaderboardEntry } from '../types';
 import api from '../services/api';
 import Navbar from '../components/Navbar';
+import StrideLoader from '../components/ui/StrideLoader';
 import { Trophy, TrendingUp, TrendingDown, Minus, Circle, Calendar, Globe } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -110,9 +111,8 @@ const Leaderboard: React.FC = () => {
                 </div>
 
                 {loading ? (
-                    <div className="text-center py-20">
-                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--accent)] mx-auto mb-3"></div>
-                        <p className="text-xs text-white/50">Calculating {timeframe.toLowerCase()} rankings...</p>
+                    <div className="py-24">
+                        <StrideLoader size="lg" text={`Calculating ${timeframe.toLowerCase()} leaderboard rankings...`} />
                     </div>
                 ) : entries.length > 0 ? (
                     <>

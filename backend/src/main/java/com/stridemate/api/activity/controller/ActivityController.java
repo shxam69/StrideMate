@@ -42,4 +42,12 @@ public class ActivityController {
         ActivityResponse activity = activityService.getActivityById(id, authentication.getName());
         return ResponseEntity.ok(activity);
     }
+
+    @GetMapping("/{id}/route")
+    public ResponseEntity<com.stridemate.api.activity.dto.ActivityRouteResponseDto> getActivityRoute(
+            @PathVariable UUID id,
+            @RequestParam(value = "privacy", defaultValue = "false") boolean privacy,
+            Authentication authentication) {
+        return ResponseEntity.ok(activityService.getActivityRoute(id, authentication.getName(), privacy));
+    }
 }

@@ -15,6 +15,7 @@ import ActivityHistory from './pages/ActivityHistory';
 import Analytics from './pages/Analytics';
 import Environment from './pages/Environment';
 import Safety from './pages/Safety';
+import SmartMap from './pages/SmartMap';
 import AuthLayout from './layouts/AuthLayout';
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -78,6 +79,7 @@ const App: React.FC = () => {
 
                         {/* Core Protected App Routes */}
                         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                        <Route path="/map" element={<ProtectedRoute><SmartMap /></ProtectedRoute>} />
                         <Route path="/environment" element={<ProtectedRoute><Environment /></ProtectedRoute>} />
                         <Route path="/history" element={<ProtectedRoute><ActivityHistory /></ProtectedRoute>} />
                         <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />

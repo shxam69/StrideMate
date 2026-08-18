@@ -5,11 +5,15 @@ import java.util.UUID;
 
 public class SosResponseDto {
     private UUID eventId;
-    private String status; // SENT, PARTIALLY_SENT, FAILED
+    private String status; // SENT, PARTIALLY_SENT, FAILED, ACCEPTED, REQUESTED
+    private String provider; // SPRINGEDGE, MOCK
     private String locationUrl;
-    private String sms; // SENT, FAILED, SKIPPED, MOCK_SENT
-    private String whatsapp; // SENT, FAILED, SKIPPED, MOCK_SENT
-    private String call; // SENT, FAILED, SKIPPED, MOCK_SENT
+    private String sms; // REQUESTED, ACCEPTED, SENT, DELIVERED, FAILED, UNAVAILABLE, SKIPPED, MOCK_SENT
+    private String whatsapp;
+    private String call;
+    private String smsSid;
+    private String smsErrorCode;
+    private String smsErrorMessage;
     private String message;
     private Instant triggeredAt;
     private String contactName;
@@ -23,6 +27,9 @@ public class SosResponseDto {
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
 
+    public String getProvider() { return provider; }
+    public void setProvider(String provider) { this.provider = provider; }
+
     public String getLocationUrl() { return locationUrl; }
     public void setLocationUrl(String locationUrl) { this.locationUrl = locationUrl; }
 
@@ -34,6 +41,15 @@ public class SosResponseDto {
 
     public String getCall() { return call; }
     public void setCall(String call) { this.call = call; }
+
+    public String getSmsSid() { return smsSid; }
+    public void setSmsSid(String smsSid) { this.smsSid = smsSid; }
+
+    public String getSmsErrorCode() { return smsErrorCode; }
+    public void setSmsErrorCode(String smsErrorCode) { this.smsErrorCode = smsErrorCode; }
+
+    public String getSmsErrorMessage() { return smsErrorMessage; }
+    public void setSmsErrorMessage(String smsErrorMessage) { this.smsErrorMessage = smsErrorMessage; }
 
     public String getMessage() { return message; }
     public void setMessage(String message) { this.message = message; }
